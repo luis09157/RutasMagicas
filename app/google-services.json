@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "575534151090",
+    "project_id": "rutasmagicas-2514a",
+    "storage_bucket": "rutasmagicas-2514a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:575534151090:android:46cb2c28f75e83d6de20ab",
+        "android_client_info": {
+          "package_name": "com.ninodev.rutasmagicas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdfSuL-a47HOfIRKAOKvKr1I5tR2tpjpY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
