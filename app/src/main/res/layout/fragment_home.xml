@@ -7,48 +7,45 @@
     android:background="@color/background_color"
     tools:context=".ui.home.HomeFragment">
 
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:background="@drawable/portada">
+            android:background="@drawable/portada_2">
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:textColor="#02608c"
-                android:textSize="22dp"
+                app:autoSizeTextType="uniform"
+                app:autoSizeMaxTextSize="27sp"
+                app:autoSizeMinTextSize="21sp"
+                app:autoSizeStepGranularity="2sp"
                 android:fontFamily="@font/suse_extra_bold"
                 android:gravity="center"
                 android:text="Hola Luis,\n tienes un 40 % completado"/>
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="160dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center|bottom"
-                app:cardCornerRadius="10dp"
-                android:backgroundTint="#ff6800">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:textColor="@color/white"
-                        android:fontFamily="@font/suse_bold"
-                        android:gravity="center"
-                        android:text="Rutas Magicas"/>
-            </androidx.cardview.widget.CardView>
-
         </FrameLayout>
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:progress="30"
+            android:indeterminate="false"/>
 
         <GridView
             android:id="@+id/lista_estados"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_margin="5dp"
-            android:numColumns="2"></GridView>
+            android:layout_height="0dp"
+            android:layout_marginTop="16dp"
+            android:numColumns="2"
+            android:layout_weight="1"/>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -47,7 +47,8 @@ class EstadosAdapter(
 
         val item = getItem(position)
         holder.txt_titulo?.text = item.nombreEstado
-        holder.txt_descripcion?.text = item.descripcion
+        //holder.txt_descripcion?.text = item.descripcion
+        holder.txt_descripcion?.text = "Visitaste 2 pueblos mágicos."
         val numeroPueblosInt = item.numeroPueblos.toIntOrNull() ?: 0
 
         val texto = if (numeroPueblosInt == 1) {
