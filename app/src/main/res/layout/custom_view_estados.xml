@@ -9,7 +9,7 @@
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
-        android:layout_height="180dp"
+        android:layout_height="200dp"
         style="@style/Widget.Material3.CardView.Filled"
         tools:ignore="MissingConstraints">
         <LinearLayout
@@ -75,10 +75,10 @@
                     android:textColor="@color/black"
                     app:autoSizeMaxTextSize="18sp"
                     app:autoSizeMinTextSize="10sp"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginTop="5dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp"
                     android:layout_marginBottom="3dp"
-                    android:layout_marginRight="5dp"
+                    android:layout_marginRight="10dp"
                     android:fontFamily="@font/suse_bold"/>
                 <TextView
                     android:id="@+id/txt_descripcion"
@@ -86,8 +86,9 @@
                     android:textColor="@color/txt_secundario"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginRight="5dp"
+                    android:layout_marginLeft="10dp"
+
+                    android:layout_marginRight="10dp"
                     app:autoSizeMaxTextSize="10sp"
                     app:autoSizeMinTextSize="9sp"
                     android:text="Visitaste 2 pueblos mágicos."
