@@ -58,5 +58,7 @@ dependencies {
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.github.bumptech.glide:glide:4.15.1")
+    implementation ("com.google.android.material:material:1.8.0")
+
 
 }

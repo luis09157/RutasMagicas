@@ -11,33 +11,64 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="5dp">
 
-        <FrameLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:background="@drawable/portada_2">
+            android:layout_height="150dp"
+            android:orientation="horizontal">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:textColor="#02608c"
+                android:layout_weight="0.5"
                 app:autoSizeTextType="uniform"
                 app:autoSizeMaxTextSize="27sp"
                 app:autoSizeMinTextSize="21sp"
                 app:autoSizeStepGranularity="2sp"
+                android:layout_margin="5dp"
                 android:fontFamily="@font/suse_extra_bold"
-                android:gravity="center"
-                android:text="Hola Luis,\n tienes un 40 % completado"/>
-        </FrameLayout>
+                android:gravity="center|left"
+                android:text="Hola Luis,\n ¿Que ruta quieres realizar hoy?"/>
 
-        <ProgressBar
-            android:id="@+id/progress_bar"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progress_circular"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_margin="10dp"
+                    app:layout_constraintWidth_percent="0.5"
+                    app:layout_constraintHeight_percent="0.3"
+                    app:layout_constraintDimensionRatio="1:1"
+                    app:trackThickness="8dp"
+                    android:progress="30"
+                    app:trackColor="@color/color_verde_suave"
+                    app:indicatorColor="@color/color_verde_fuerte"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+
+        <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:progress="30"
-            android:indeterminate="false"/>
+            android:background="@color/background_color">
+            <com.google.android.material.search.SearchBar
+                android:id="@+id/search_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/gris_claro"
+                android:hint="Buscar" />
+        </com.google.android.material.appbar.AppBarLayout>
 
         <GridView
             android:id="@+id/lista_estados"
