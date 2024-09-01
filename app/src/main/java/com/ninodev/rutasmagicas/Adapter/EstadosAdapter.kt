@@ -38,6 +38,7 @@ class EstadosAdapter(
             holder.imageView = view.findViewById(R.id.imagen_estado)
             holder.txt_titulo = view.findViewById(R.id.txt_titulo)
             holder.txt_descripcion = view.findViewById(R.id.txt_descripcion)
+            holder.txt_numero_pueblos = view.findViewById(R.id.txt_numero_pueblos)
             view.tag = holder
         } else {
             view = convertView
@@ -47,6 +48,16 @@ class EstadosAdapter(
         val item = getItem(position)
         holder.txt_titulo?.text = item.nombreEstado
         holder.txt_descripcion?.text = item.descripcion
+        val numeroPueblosInt = item.numeroPueblos.toIntOrNull() ?: 0
+
+        val texto = if (numeroPueblosInt == 1) {
+            "$numeroPueblosInt Pueblo"
+        } else {
+            "$numeroPueblosInt Pueblos"
+        }
+
+        holder.txt_numero_pueblos?.text = texto
+
 
         // Usar Glide para cargar la imagen desde la URL
         Glide.with(context)
@@ -62,5 +73,6 @@ class EstadosAdapter(
         var imageView: ImageView? = null
         var txt_titulo: TextView? = null
         var txt_descripcion: TextView? = null
+        var txt_numero_pueblos: TextView? = null
     }
 }

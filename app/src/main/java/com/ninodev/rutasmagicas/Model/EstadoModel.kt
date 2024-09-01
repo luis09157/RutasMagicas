@@ -7,5 +7,6 @@ data class EstadoModel(
     var nombreEstado: String = "",
     var descripcion: String = "",
     var imagen: String = "",
+    var numeroPueblos: String = "",
     var municipios: MutableList<MunicipioModel> = mutableListOf() // Lista mutable de municipios
 )

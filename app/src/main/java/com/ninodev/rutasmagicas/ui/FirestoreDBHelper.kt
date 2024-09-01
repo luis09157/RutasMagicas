@@ -81,6 +81,7 @@ class FirestoreDBHelper {
                         }
                     }
 
+                    estadoModel.numeroPueblos = estadoModel.municipios.size.toString()
                     estados.add(estadoModel)
                 }
                 onSuccess(estados)

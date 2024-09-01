@@ -9,4 +9,5 @@
     <color name="white">#FFFFFFFF</color>
 
     <color name="background_color">#f4f4f4</color>
+    <color name="txt_secundario">#525252</color>
 </resources>
