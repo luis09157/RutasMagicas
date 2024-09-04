@@ -1,18 +1,14 @@
 package com.ninodev.rutasmagicas
 
+import LoginFragment
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.navigation.NavController
-import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
-import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.databinding.ActivityMainBinding
 import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
@@ -74,7 +70,8 @@ class MainActivity : AppCompatActivity() {
         )
 
         // Cambiar al fragmento de inicio
-        UtilFragment.changeFragment(this, HomeFragment(), TAG)
+       // UtilFragment.changeFragment(this, HomeFragment(), TAG)
+        UtilFragment.changeFragment(this, LoginFragment(), TAG)
     }
 
 }

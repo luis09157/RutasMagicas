@@ -28,7 +28,7 @@
                 app:autoSizeMinTextSize="21sp"
                 app:autoSizeStepGranularity="2sp"
                 android:layout_margin="5dp"
-                android:fontFamily="@font/suse_extra_bold"
+                android:fontFamily="@font/poppins_extra_bold"
                 android:gravity="center|left"
                 android:text="Hola Luis,\n ¿Que ruta quieres realizar hoy?"/>
 
