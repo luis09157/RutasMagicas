@@ -1,6 +1,8 @@
 package com.ninodev.rutasmagicas.Fragment.Home
 
+import LoginFragment
 import android.graphics.Typeface
+import android.nfc.Tag
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +18,7 @@ import com.google.android.material.search.SearchBar
 import com.google.android.material.snackbar.Snackbar
 import com.ninodev.rutasmagicas.Adapter.EstadosAdapter
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
+import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.R
@@ -44,6 +47,33 @@ class HomeFragment : Fragment() {
         listeners()
 
         return root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        init()
+    }
+
+    fun init() {
+        try {
+            if (HelperUser.isUserLoggedIn()) {
+                val userId = HelperUser.getUserId()
+                if (!userId.isNullOrEmpty()) {
+                    HelperUser._ID_USER = userId
+                    Snackbar.make(requireView(), userId, Snackbar.LENGTH_LONG).show()
+                } else {
+                    // Manejar el caso en que userId es nulo o vacío
+                    Log.e(TAG, "User ID is null or empty")
+                    Snackbar.make(requireView(), "User ID is null or empty", Snackbar.LENGTH_LONG).show()
+                    // Opcional: Puedes redirigir al usuario a una pantalla de error o mostrar un mensaje
+                }
+            } else {
+                UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
+            }
+        }catch (e : Exception){
+            Snackbar.make(requireView(), "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
+        }
+
     }
 
     private fun listeners() {

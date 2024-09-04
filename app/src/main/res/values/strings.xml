@@ -21,13 +21,9 @@
     <string name="success_registration">Registro exitoso.</string>
     <string name="error_registration_failed">El registro ha fallado. Por favor, intenta nuevamente.</string>
 
-    <string name="txt_correo">Correo electrónico</string>
-    <string name="txt_contraseña">Contraseña</string>
     <string name="txt_view_registro_title">Registro</string>
 
     <!-- LoginFragment -->
-    <string name="txt_view_login_title">Iniciar Sesión</string>
-    <string name="btn_login">Iniciar Sesión</string>
     <string name="msg_login_success">¡Inicio de sesión exitoso!</string>
     <string name="msg_login_failed">La autenticación ha fallado. Por favor, intenta nuevamente.</string>
     <string name="msg_login_empty_email">Por favor, introduce tu correo electrónico.</string>
@@ -35,4 +31,20 @@
     <string name="msg_login_empty_password">Por favor, introduce tu contraseña.</string>
     <string name="msg_login_short_password">La contraseña debe tener al menos 6 caracteres.</string>
     <string name="btn_ok">Aceptar</string>
+    <string name="txt_view_login_title">¡Hola! Comienza a explorar Pueblos Mágicos.</string>
+    <string name="txt_correo">Correo Electrónico</string>
+    <string name="txt_contraseña">Contraseña</string>
+    <string name="btn_login">Iniciar Sesión</string>
+    <string name="txt_no_account">¿No tienes una cuenta?</string>
+    <string name="txt_sign_in">Registrarse</string>
+    <string name="txt_forgot_password">¿Olvidaste tu contraseña?</string>
+
+    <string name="dialog_reset_password_title">Recuperar Contraseña</string>
+    <string name="dialog_reset_password_message">Ingresa tu correo electrónico para recibir un enlace de recuperación de contraseña.</string>
+    <string name="input_hint_email">Correo electrónico</string>
+    <string name="btn_send">Enviar</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="msg_reset_email_sent">Correo de recuperación enviado.</string>
+    <string name="msg_reset_email_error">Error al enviar el correo de recuperación.</string>
+    <string name="snackbar_exit_prompt">Presiona de nuevo para salir</string>
 </resources>

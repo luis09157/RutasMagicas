@@ -3,13 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="5dp"
+    android:padding="7dp"
     xmlns:app="http://schemas.android.com/apk/res-auto"
    >
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="230dp"
         style="@style/Widget.Material3.CardView.Filled"
         tools:ignore="MissingConstraints">
         <LinearLayout
@@ -82,7 +82,7 @@
                     android:fontFamily="@font/poppins_bold"/>
                 <TextView
                     android:id="@+id/txt_descripcion"
-                    android:fontFamily="@font/poppins_bold"
+                    android:fontFamily="@font/poppins_regular"
                     android:textColor="@color/txt_secundario"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"

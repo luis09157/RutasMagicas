@@ -1,5 +1,6 @@
 package com.ninodev.rutasmagicas.Fragment.Login
 
+import LoginFragment
 import android.os.Bundle
 import android.util.Patterns
 import android.view.LayoutInflater
@@ -41,9 +42,6 @@ class RegistroFragment : Fragment() {
     }
 
     private fun listeners() {
-        binding.btnCancelar.setOnClickListener {
-            UtilFragment.changeFragment(requireContext(),HomeFragment(),TAG)
-        }
         binding.btnRegistro.setOnClickListener {
             val email = binding.txtCorreo.toString().trim()
             val password = binding.txtContraseA.toString().trim()
@@ -91,7 +89,7 @@ class RegistroFragment : Fragment() {
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    UtilFragment.changeFragment(requireContext(), PueblosMagicosFragment(), TAG)
+                    UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
                 }
             })
     }
