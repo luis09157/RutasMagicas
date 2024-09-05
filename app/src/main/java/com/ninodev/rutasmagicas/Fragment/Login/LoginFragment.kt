@@ -1,7 +1,10 @@
+package com.ninodev.rutasmagicas
+
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
+import android.util.Log
 import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
@@ -9,11 +12,16 @@ import android.view.ViewGroup
 import android.widget.EditText
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
+import com.ninodev.rutasmagicas.Config.AppConfig
 import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Fragment.Login.RegistroFragment
+import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.Helper.UtilHelper
 import com.ninodev.rutasmagicas.R
@@ -23,6 +31,7 @@ class LoginFragment : Fragment() {
     private val TAG = "LoginFragment"
     private var _binding: FragmentLoginBinding? = null
     private lateinit var auth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient
 
     private val binding get() = _binding!!
 
@@ -42,11 +51,33 @@ class LoginFragment : Fragment() {
         return root
     }
 
-    fun init(){
-        hideLoading()
+    private fun init() {
+        try {
+            hideLoading()
+            if (HelperUser.isUserLoggedIn()) {
+                val userId = HelperUser.getUserId()
+                if (!userId.isNullOrEmpty()) {
+                    HelperUser._ID_USER = userId
+                    UtilFragment.changeFragment(requireContext(), HomeFragment(), TAG)
+                }
+            }
+            // Configura Google Sign-In
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build()
+
+            googleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error: ${e.message}")
+        }
     }
 
     private fun listeners() {
+        binding.btnGoogleSignIn.setOnClickListener {
+            signInWithGoogle()
+        }
         binding.btnOlvidasteContraseA.setOnClickListener {
             showPasswordResetDialog()
         }
@@ -59,22 +90,22 @@ class LoginFragment : Fragment() {
             val password = binding.txtContraseA.editText?.text.toString().trim()
 
             if (email.isEmpty()) {
-                showAlert(getString(R.string.msg_login_empty_email))
+                UtilHelper.showAlert(requireContext(), getString(R.string.msg_login_empty_email))
                 return@setOnClickListener
             }
 
             if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                showAlert(getString(R.string.msg_login_invalid_email))
+                UtilHelper.showAlert(requireContext(), getString(R.string.msg_login_invalid_email))
                 return@setOnClickListener
             }
 
             if (password.isEmpty()) {
-                showAlert(getString(R.string.msg_login_empty_password))
+                UtilHelper.showAlert(requireContext(), getString(R.string.msg_login_empty_password))
                 return@setOnClickListener
             }
 
             if (password.length < 6) {
-                showAlert(getString(R.string.msg_login_short_password))
+                UtilHelper.showAlert(requireContext(), getString(R.string.msg_login_short_password))
                 return@setOnClickListener
             }
             showLoading()
@@ -90,18 +121,14 @@ class LoginFragment : Fragment() {
                 if (task.isSuccessful) {
                     UtilFragment.changeFragment(requireContext(), HomeFragment(), TAG)
                 } else {
-                    showAlert(getString(R.string.msg_login_failed))
+                    UtilHelper.showAlert(requireContext(), getString(R.string.msg_login_failed))
                 }
             }
     }
 
-    private fun showAlert(message: String) {
-        MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
-            .setMessage(message)
-            .setPositiveButton(getString(R.string.btn_ok)) { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
+    private fun signInWithGoogle() {
+        val signInIntent = googleSignInClient.signInIntent
+        startActivityForResult(signInIntent, AppConfig.GOOGLE_SIGN_IN)
     }
 
     private fun showLoading() {
@@ -165,7 +192,6 @@ class LoginFragment : Fragment() {
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     if (doubleBackToExitPressedOnce) {
-                        // Si se presionó dos veces, se sale de la aplicación
                         requireActivity().finish()
                         return
                     }
@@ -173,10 +199,9 @@ class LoginFragment : Fragment() {
                     doubleBackToExitPressedOnce = true
                     Snackbar.make(requireView(), getString(R.string.snackbar_exit_prompt), Snackbar.LENGTH_LONG)
                         .show()
-                    // Se establece el tiempo de espera para el segundo botón de retroceso
                     Handler(Looper.getMainLooper()).postDelayed({
                         doubleBackToExitPressedOnce = false
-                    }, 2000) // 2 segundos
+                    }, 2000)
                 }
             })
     }

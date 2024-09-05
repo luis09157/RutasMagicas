@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">RutasMágicas</string>
+
+    <string name="default_web_client_id">575534151090-ub47a85o7kgtbvqfne85d02s857786am.apps.googleusercontent.com</string>
+
+
+
     <string name="navigation_drawer_open">Abrir el menú de navegación</string>
     <string name="navigation_drawer_close">Cerrar el menú de navegación</string>
     <string name="nav_header_title">Android Studio</string>
@@ -14,14 +19,30 @@
     <string name="menu_estados">Estados</string>
 
     <!-- RegistroFragment -->
-    <string name="error_empty_email">El correo electrónico no puede estar vacío.</string>
-    <string name="error_invalid_email">Por favor, introduce un correo electrónico válido.</string>
-    <string name="error_empty_password">La contraseña no puede estar vacía.</string>
-    <string name="error_short_password">La contraseña debe tener al menos 6 caracteres.</string>
     <string name="success_registration">Registro exitoso.</string>
-    <string name="error_registration_failed">El registro ha fallado. Por favor, intenta nuevamente.</string>
+
+    <string name="error_empty_email">El correo electrónico no puede estar vacío</string>
+    <string name="error_invalid_email">El correo electrónico ingresado no es válido</string>
+    <string name="error_empty_password">La contraseña no puede estar vacía</string>
+    <string name="error_short_password">La contraseña debe tener al menos 8 caracteres</string>
+    <string name="error_long_password">La contraseña no debe exceder los 20 caracteres</string>
+    <string name="error_no_case_variation">La contraseña debe contener letras mayúsculas y minúsculas</string>
+    <string name="error_no_number">La contraseña debe contener al menos un número</string>
+    <string name="error_no_special_characters">La contraseña debe contener al menos un carácter especial</string>
+    <string name="error_password_contains_email">La contraseña no debe contener el correo electrónico</string>
+    <string name="error_password_mismatch">Las contraseñas no coinciden</string>
+    <string name="error_email_already_in_use">El correo electrónico ya está en uso</string>
+    <string name="error_registration_failed">No se pudo completar el registro</string>
+
+    <string name="error_terms_not_accepted">Debes aceptar los términos y condiciones para continuar</string>
 
     <string name="txt_view_registro_title">Registro</string>
+    <string name="txt_confirmar_contraseña">Confirmar contraseña</string>
+    <string name="txt_leido_y_acepto">He leído y acepto los</string>
+    <string name="txt_terminos">términos</string>
+    <string name="txt_y">y</string>
+    <string name="txt_politica_privacidad">política de privacidad</string>
+    <string name="btn_registro">Registrarse</string>
 
     <!-- LoginFragment -->
     <string name="msg_login_success">¡Inicio de sesión exitoso!</string>
@@ -47,4 +68,5 @@
     <string name="msg_reset_email_sent">Correo de recuperación enviado.</string>
     <string name="msg_reset_email_error">Error al enviar el correo de recuperación.</string>
     <string name="snackbar_exit_prompt">Presiona de nuevo para salir</string>
+
 </resources>

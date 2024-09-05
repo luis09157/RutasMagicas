@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "575534151090",
+    "firebase_url": "https://rutasmagicas-2514a-default-rtdb.firebaseio.com",
     "project_id": "rutasmagicas-2514a",
     "storage_bucket": "rutasmagicas-2514a.appspot.com"
   },
@@ -12,7 +13,16 @@
           "package_name": "com.ninodev.rutasmagicas"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "575534151090-5avf1d1enepk6bmv4dgsbc302bdpamcq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ninodev.rutasmagicas",
+            "certificate_hash": "da2cb98585beae49166f7cfbbc3b8aea66ccb34b"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDdfSuL-a47HOfIRKAOKvKr1I5tR2tpjpY"

@@ -1,23 +1,27 @@
 package com.ninodev.rutasmagicas
 
-import LoginFragment
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.firebase.FirebaseApp
-import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import com.ninodev.rutasmagicas.Config.AppConfig
+import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Helper.UtilFragment
+import com.ninodev.rutasmagicas.Helper.UtilHelper
 import com.ninodev.rutasmagicas.databinding.ActivityMainBinding
-import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
-    private lateinit var firestoreDBHelper: FirestoreDBHelper
+    private lateinit var auth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient
     private val TAG = "MainActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,52 +30,51 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val drawerLayout: DrawerLayout = binding.drawerLayout
-        val navView = binding.navView
-
-        // Obtén el NavController usando el ID correcto
-
-        appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow
-            ), drawerLayout
-        )
-
-
-
-
         // Inicializar Firebase
         FirebaseApp.initializeApp(this)
 
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val token = task.result
-                Log.d(TAG, "Token: $token")
-            } else {
-                Log.w(TAG, "Error al obtener el token", task.exception)
-            }
+        auth = FirebaseAuth.getInstance()
+
+        // Configuración de Google Sign-In
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        // Verificar si el usuario ya está autenticado
+        if (auth.currentUser != null) {
+            UtilFragment.changeFragment(this, HomeFragment(), TAG)
+        } else {
+            UtilFragment.changeFragment(this, LoginFragment(), TAG)
         }
-
-        // Inicializar FirestoreDBHelper después de Firebase
-        firestoreDBHelper = FirestoreDBHelper()
-
-        // Usar FirestoreDBHelper para obtener municipios del estado "Aguascalientes"
-        firestoreDBHelper.getMunicipios(
-            estado = "Aguascalientes",
-            onSuccess = { municipios ->
-                for (municipio in municipios) {
-                    Log.d(TAG, "Municipio: $municipio")
-                }
-            },
-            onFailure = { error ->
-                Toast.makeText(this, "Error al obtener los municipios: ${error.message}", Toast.LENGTH_LONG).show()
-                Log.e(TAG, "Error al obtener los municipios", error.toException())
-            }
-        )
-
-        // Cambiar al fragmento de inicio
-       // UtilFragment.changeFragment(this, HomeFragment(), TAG)
-        UtilFragment.changeFragment(this, LoginFragment(), TAG)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == AppConfig.GOOGLE_SIGN_IN) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            try {
+                val account = task.getResult(ApiException::class.java)!!
+                Log.d(TAG, "Google sign in successful: ${account.id}")
+
+                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                auth.signInWithCredential(credential)
+                    .addOnCompleteListener(this) { task ->
+                        if (task.isSuccessful) {
+                            // Inicio de sesión exitoso
+                            UtilFragment.changeFragment(this, HomeFragment(), TAG)
+                        } else {
+                            // Si el inicio de sesión falla, muestra un mensaje al usuario.
+                            Log.w(TAG, "signInWithCredential:failure", task.exception)
+                            UtilHelper.showAlert(this, getString(R.string.msg_login_failed))
+                        }
+                    }
+            } catch (e: ApiException) {
+                Log.w(TAG, "Google sign in failed", e)
+            }
+        }
+    }
 }

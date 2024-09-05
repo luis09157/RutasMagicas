@@ -1,21 +1,19 @@
 package com.ninodev.rutasmagicas.Fragment.Login
 
-import LoginFragment
 import android.os.Bundle
 import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
-import com.bumptech.glide.util.Util
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
-import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
 import com.ninodev.rutasmagicas.Helper.UtilFragment
+import com.ninodev.rutasmagicas.LoginFragment
 import com.ninodev.rutasmagicas.R
 import com.ninodev.rutasmagicas.databinding.FragmentRegistroBinding
 
@@ -43,8 +41,15 @@ class RegistroFragment : Fragment() {
 
     private fun listeners() {
         binding.btnRegistro.setOnClickListener {
-            val email = binding.txtCorreo.toString().trim()
-            val password = binding.txtContraseA.toString().trim()
+            // Limpiar errores anteriores
+            binding.txtCorreo.error = null
+            binding.txtContraseA.error = null
+            binding.txtConfirmarContraseA.error = null
+
+            val email = binding.txtCorreo.editText?.text.toString().trim()
+            val password = binding.txtContraseA.editText?.text.toString().trim()
+            val confirmPassword = binding.txtConfirmarContraseA.editText?.text.toString().trim()
+            val termsAccepted = binding.checkboxTerminosCondiciones.isChecked
 
             if (email.isEmpty()) {
                 binding.txtCorreo.error = getString(R.string.error_empty_email)
@@ -61,8 +66,44 @@ class RegistroFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            if (password.length < 6) {
+            if (password.length < 8) {
                 binding.txtContraseA.error = getString(R.string.error_short_password)
+                return@setOnClickListener
+            }
+
+            if (password.length > 20) {
+                binding.txtContraseA.error = getString(R.string.error_long_password)
+                return@setOnClickListener
+            }
+
+            if (!password.matches(".*[a-z].*".toRegex()) || !password.matches(".*[A-Z].*".toRegex())) {
+                binding.txtContraseA.error = getString(R.string.error_no_case_variation)
+                return@setOnClickListener
+            }
+
+            if (!password.matches(".*\\d.*".toRegex())) {
+                binding.txtContraseA.error = getString(R.string.error_no_number)
+                return@setOnClickListener
+            }
+
+            if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\|,.<>/?].*".toRegex())) {
+                binding.txtContraseA.error = getString(R.string.error_no_special_characters)
+                return@setOnClickListener
+            }
+
+            if (password.contains(email.split('@')[0], ignoreCase = true)) {
+                binding.txtContraseA.error = getString(R.string.error_password_contains_email)
+                return@setOnClickListener
+            }
+
+            if (password != confirmPassword) {
+                binding.txtConfirmarContraseA.error = getString(R.string.error_password_mismatch)
+                return@setOnClickListener
+            }
+
+            if (!termsAccepted) {
+                Snackbar.make(requireView(), getString(R.string.error_terms_not_accepted), Snackbar.LENGTH_LONG)
+                    .show()
                 return@setOnClickListener
             }
 
@@ -70,15 +111,20 @@ class RegistroFragment : Fragment() {
         }
     }
 
+
     private fun createAccount(email: String, password: String) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(requireActivity()) { task ->
                 if (task.isSuccessful) {
-                    val user = auth.currentUser
-                    Toast.makeText(requireContext(), getString(R.string.success_registration), Toast.LENGTH_SHORT).show()
                     UtilFragment.changeFragment(requireContext(), HomeFragment(), TAG)
                 } else {
-                    Toast.makeText(requireContext(), getString(R.string.error_registration_failed), Toast.LENGTH_SHORT).show()
+                    val errorMessage = when (task.exception?.message) {
+                        "The email address is already in use by another account." ->
+                            getString(R.string.error_email_already_in_use)
+                        else ->
+                            getString(R.string.error_registration_failed)
+                    }
+                    Snackbar.make(requireView(), errorMessage, Snackbar.LENGTH_LONG).show()
                 }
             }
     }

@@ -1,6 +1,5 @@
 package com.ninodev.rutasmagicas.Fragment.Home
 
-import LoginFragment
 import android.graphics.Typeface
 import android.nfc.Tag
 import android.os.Bundle
@@ -20,6 +19,7 @@ import com.ninodev.rutasmagicas.Adapter.EstadosAdapter
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
+import com.ninodev.rutasmagicas.LoginFragment
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.R
 import com.ninodev.rutasmagicas.databinding.FragmentHomeBinding
@@ -62,10 +62,7 @@ class HomeFragment : Fragment() {
                     HelperUser._ID_USER = userId
                     Snackbar.make(requireView(), userId, Snackbar.LENGTH_LONG).show()
                 } else {
-                    // Manejar el caso en que userId es nulo o vacío
-                    Log.e(TAG, "User ID is null or empty")
                     Snackbar.make(requireView(), "User ID is null or empty", Snackbar.LENGTH_LONG).show()
-                    // Opcional: Puedes redirigir al usuario a una pantalla de error o mostrar un mensaje
                 }
             } else {
                 UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
@@ -97,8 +94,7 @@ class HomeFragment : Fragment() {
                 estadosAdapter.notifyDataSetChanged()
             },
             onFailure = { error ->
-                Toast.makeText(requireContext(), "Error al obtener los municipios: ${error.message}", Toast.LENGTH_LONG).show()
-                Log.e(TAG, "Error al obtener los municipios", error.toException())
+               Snackbar.make(requireView(), "Error al obtener los municipios: ${error.message}", Snackbar.LENGTH_LONG).show()
             }
         )
     }
