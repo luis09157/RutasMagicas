@@ -21,28 +21,9 @@
     <!-- RegistroFragment -->
     <string name="success_registration">Registro exitoso.</string>
 
-    <string name="error_empty_email">El correo electrónico no puede estar vacío</string>
-    <string name="error_invalid_email">El correo electrónico ingresado no es válido</string>
-    <string name="error_empty_password">La contraseña no puede estar vacía</string>
-    <string name="error_short_password">La contraseña debe tener al menos 8 caracteres</string>
-    <string name="error_long_password">La contraseña no debe exceder los 20 caracteres</string>
-    <string name="error_no_case_variation">La contraseña debe contener letras mayúsculas y minúsculas</string>
-    <string name="error_no_number">La contraseña debe contener al menos un número</string>
-    <string name="error_no_special_characters">La contraseña debe contener al menos un carácter especial</string>
-    <string name="error_password_contains_email">La contraseña no debe contener el correo electrónico</string>
-    <string name="error_password_mismatch">Las contraseñas no coinciden</string>
+
     <string name="error_email_already_in_use">El correo electrónico ya está en uso</string>
-    <string name="error_registration_failed">No se pudo completar el registro</string>
 
-    <string name="error_terms_not_accepted">Debes aceptar los términos y condiciones para continuar</string>
-
-    <string name="txt_view_registro_title">Registro</string>
-    <string name="txt_confirmar_contraseña">Confirmar contraseña</string>
-    <string name="txt_leido_y_acepto">He leído y acepto los</string>
-    <string name="txt_terminos">términos</string>
-    <string name="txt_y">y</string>
-    <string name="txt_politica_privacidad">política de privacidad</string>
-    <string name="btn_registro">Registrarse</string>
 
     <!-- LoginFragment -->
     <string name="msg_login_success">¡Inicio de sesión exitoso!</string>
@@ -53,8 +34,6 @@
     <string name="msg_login_short_password">La contraseña debe tener al menos 6 caracteres.</string>
     <string name="btn_ok">Aceptar</string>
     <string name="txt_view_login_title">¡Hola! Comienza a explorar Pueblos Mágicos.</string>
-    <string name="txt_correo">Correo Electrónico</string>
-    <string name="txt_contraseña">Contraseña</string>
     <string name="btn_login">Iniciar Sesión</string>
     <string name="txt_no_account">¿No tienes una cuenta?</string>
     <string name="txt_sign_in">Registrarse</string>
@@ -68,5 +47,42 @@
     <string name="msg_reset_email_sent">Correo de recuperación enviado.</string>
     <string name="msg_reset_email_error">Error al enviar el correo de recuperación.</string>
     <string name="snackbar_exit_prompt">Presiona de nuevo para salir</string>
+
+
+    <!-- Strings for registration -->
+    <string name="txt_view_registro_title">Registro</string>
+    <string name="txt_nombre_usuario">Nombre de Usuario</string>
+    <string name="txt_correo">Correo Electrónico</string>
+    <string name="txt_contraseña">Contraseña</string>
+    <string name="txt_confirmar_contraseña">Confirmar Contraseña</string>
+    <string name="txt_leido_y_acepto">He leído y acepto los</string>
+    <string name="txt_terminos">términos y condiciones</string>
+    <string name="txt_y">y</string>
+    <string name="txt_politica_privacidad">Política de Privacidad</string>
+    <string name="btn_registro">Registrarse</string>
+
+    <!-- Error messages -->
+    <string name="error_empty_email">El correo electrónico no puede estar vacío.</string>
+    <string name="error_invalid_email">El correo electrónico no es válido.</string>
+    <string name="error_empty_password">La contraseña no puede estar vacía.</string>
+    <string name="error_short_password">La contraseña debe tener al menos 8 caracteres.</string>
+    <string name="error_long_password">La contraseña no puede tener más de 20 caracteres.</string>
+    <string name="error_no_case_variation">La contraseña debe contener al menos una letra mayúscula y una minúscula.</string>
+    <string name="error_no_number">La contraseña debe contener al menos un número.</string>
+    <string name="error_no_special_characters">La contraseña debe contener al menos un carácter especial.</string>
+    <string name="error_password_contains_email">La contraseña no puede contener el nombre de usuario.</string>
+    <string name="error_password_mismatch">Las contraseñas no coinciden.</string>
+    <string name="error_terms_not_accepted">Debes aceptar los términos y condiciones para continuar.</string>
+    <string name="error_registration_failed">El registro falló. Inténtalo de nuevo.</string>
+
+    <string name="error_empty_name">El nombre de usuario no puede estar vacío.</string>
+    <string name="error_username_taken">El nombre de usuario ya está en uso.</string>
+    <string name="error_email_taken">El correo electrónico ya está registrado.</string>
+    <string name="registration_successful">Registro exitoso. Bienvenido.</string>
+    <string name="error_email_already_registered">El correo electrónico ya está registrado.</string>
+
+    <string name="thank_you_for_registering">¡Gracias por unirte a nuestra comunidad!</string>
+
+
 
 </resources>

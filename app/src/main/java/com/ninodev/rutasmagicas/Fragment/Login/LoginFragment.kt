@@ -1,5 +1,6 @@
 package com.ninodev.rutasmagicas
 
+import RegistroFragment
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -20,7 +21,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.ninodev.rutasmagicas.Config.AppConfig
 import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
-import com.ninodev.rutasmagicas.Fragment.Login.RegistroFragment
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.Helper.UtilHelper
@@ -35,6 +35,10 @@ class LoginFragment : Fragment() {
 
     private val binding get() = _binding!!
 
+    companion object{
+        var _FLAG_IS_REGISTRO = false
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -48,6 +52,7 @@ class LoginFragment : Fragment() {
 
         init()
         listeners()
+
         return root
     }
 
@@ -82,6 +87,7 @@ class LoginFragment : Fragment() {
             showPasswordResetDialog()
         }
         binding.btnRegistro.setOnClickListener {
+            _FLAG_IS_REGISTRO  = false
             UtilFragment.changeFragment(requireContext(), RegistroFragment(), TAG)
         }
         binding.btnLogin.setOnClickListener {
@@ -184,6 +190,12 @@ class LoginFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+
+        if(_FLAG_IS_REGISTRO){
+            _FLAG_IS_REGISTRO = false
+            Snackbar.make(requireView(), getString(R.string.thank_you_for_registering), Snackbar.LENGTH_LONG)
+                .show()
+        }
 
         var doubleBackToExitPressedOnce = false
 
