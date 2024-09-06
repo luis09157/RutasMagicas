@@ -4,41 +4,144 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-        <ImageView
-            android:id="@+id/imagen_municipio"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/estado_nuevo_leon"/>
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/txt_titulo"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Zacatecas"
-            android:textColor="@color/black"
-            app:autoSizeMaxTextSize="18sp"
-            app:autoSizeMinTextSize="10sp"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="3dp"
-            android:layout_marginRight="10dp"
-            android:fontFamily="@font/poppins_bold"/>
-        <TextView
-            android:id="@+id/txt_descripcion"
-            android:fontFamily="@font/poppins_regular"
-            android:textColor="@color/txt_secundario"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            app:autoSizeMaxTextSize="10sp"
-            app:autoSizeMinTextSize="9sp" />
+            android:orientation="vertical">
 
-    </LinearLayout>
+            <ImageView
+                android:id="@+id/imagen_municipio"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/estado_nuevo_leon"/>
+
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="200dp"
+                android:layout_height="50dp"
+                android:layout_gravity="right"
+                app:cardElevation="8dp"
+                android:layout_marginRight="10dp"
+                android:backgroundTint="@color/fondo_vista_detalle_pueblo"
+                android:layout_marginTop="-25dp"
+                android:alpha="0.9"
+                app:cardCornerRadius="20dp">
+
+            </com.google.android.material.card.MaterialCardView>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="-50dp"
+                android:translationZ="10dp"
+                android:layout_marginRight="10dp"
+                android:gravity="right">
+                <LinearLayout
+                    android:layout_width="200dp"
+                    android:layout_height="50dp"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="10dp"
+                        android:layout_weight="1"
+                        android:src="@drawable/ubicacion" />
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="10dp"
+                        android:layout_weight="1"
+                        android:src="@drawable/completado" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="110dp"
+                android:orientation="horizontal"
+                android:layout_margin="10dp"
+                android:gravity="right">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.5"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/txt_titulo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_bold"
+                        android:text="Zacatecas"
+                        android:textColor="@color/black"
+                        android:autoSizeTextType="uniform"
+                        android:textSize="18dp"/>
+
+
+                    <TextView
+                        android:id="@+id/txt_descripcion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="hola que tal "
+                        android:fontFamily="@font/poppins_regular"
+                        android:textColor="@color/txt_secundario"
+                        android:maxLines="3"
+                        android:textSize="14dp"  />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <com.airbnb.lottie.LottieAnimationView
+                        android:visibility="visible"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="0.2"
+                        app:lottie_rawRes="@raw/animacion_soleado"
+                        app:lottie_autoPlay="true"
+                        app:lottie_loop="true"/>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="Soleado"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/poppins_bold"
+                        android:textColor="@color/txt_secundario"
+                        android:autoSizeTextType="uniform"
+                        android:maxLines="1"
+                        app:autoSizeMaxTextSize="14sp"
+                        app:autoSizeMinTextSize="8sp"  />
+                </LinearLayout>
+
+
+
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/text_relleno"
+                android:gravity="left"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:fontFamily="@font/poppins_regular"
+                android:textColor="@color/txt_secundario"
+                android:autoSizeTextType="uniform"
+                app:autoSizeMaxTextSize="14sp"
+                app:autoSizeMinTextSize="8sp"  />
+        </LinearLayout>
+
+
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

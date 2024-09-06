@@ -88,5 +88,6 @@
     <color name="black">#000000</color>
     <color name="color_verde_suave">#a255d1</color>
     <color name="color_verde_fuerte">#6c3d88</color>
+    <color name="fondo_vista_detalle_pueblo">#A1005D</color>
 
 </resources>
