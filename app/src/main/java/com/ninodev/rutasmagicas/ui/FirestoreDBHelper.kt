@@ -1,95 +1,89 @@
 package com.ninodev.rutasmagicas.ui
 
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
+import android.util.Log
+import com.google.firebase.firestore.FirebaseFirestore
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.Model.MunicipioModel
 
 class FirestoreDBHelper {
-    private val db: DatabaseReference = FirebaseDatabase.getInstance().getReference("Mexico/")
 
-    // Método para obtener los nombres de los municipios desde Realtime Database
-    fun getMunicipios(
-        estado: String,
-        onSuccess: (List<MunicipioModel>) -> Unit,
-        onFailure: (DatabaseError) -> Unit
-    ) {
-        val estadoRef = db.child("Estados").child(estado).child("Municipios")
-        estadoRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val municipios = mutableListOf<MunicipioModel>()
-                for (municipioSnapshot in snapshot.children) {
-                    val nombreMunicipio = municipioSnapshot.child("nombreMunicipio").getValue(String::class.java)
-                    val imagen = municipioSnapshot.child("imagen").getValue(String::class.java)
-                    val descripcion = municipioSnapshot.child("descripcion").getValue(String::class.java)
-
-                    if (nombreMunicipio != null) {
-                        val municipio = MunicipioModel(
-                            nombreMunicipio = nombreMunicipio,
-                            imagen = imagen ?: "",
-                            descripcion = descripcion ?: ""
-                        )
-                        municipios.add(municipio)
-                    }
-                }
-                onSuccess(municipios)
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                onFailure(error)
-            }
-        })
-    }
+    private val firestore = FirebaseFirestore.getInstance()
 
     fun getEstados(
         onSuccess: (MutableList<EstadoModel>) -> Unit,
-        onFailure: (DatabaseError) -> Unit
+        onFailure: (Exception) -> Unit
     ) {
-        val estadoRef = db.child("Estados")
-        estadoRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+        fetchEstadosFromFirestore(onSuccess, onFailure)
+    }
+
+    private fun fetchEstadosFromFirestore(
+        onSuccess: (MutableList<EstadoModel>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        firestore.collection("RutasMagicas")
+            .document("Paises")
+            .collection("Mexico")
+            .get()
+            .addOnSuccessListener { documents ->
                 val estados = mutableListOf<EstadoModel>()
-                for (estadoSnapshot in snapshot.children) {
-                    val nombreEstado = estadoSnapshot.child("nombreEstado").getValue(String::class.java)
-                    val imagen = estadoSnapshot.child("imagen").getValue(String::class.java)
-                    val descripcion = estadoSnapshot.child("descripcion").getValue(String::class.java)
-
-                    val estadoModel = EstadoModel(
-                        nombreEstado = nombreEstado ?: "",
-                        imagen = imagen ?: "",
-                        descripcion = descripcion ?: "",
-                        municipios = mutableListOf()  // Inicia la lista vacía de municipios
-                    )
-
-                    // Agrega los municipios al estado
-                    val municipiosSnapshot = estadoSnapshot.child("Municipios")
-                    for (municipioSnapshot in municipiosSnapshot.children) {
-                        val nombreMunicipio = municipioSnapshot.child("nombreMunicipio").getValue(String::class.java)
-                        val municipioImagen = municipioSnapshot.child("imagen").getValue(String::class.java)
-                        val municipioDescripcion = municipioSnapshot.child("descripcion").getValue(String::class.java)
-
-                        if (nombreMunicipio != null) {
-                            val municipio = MunicipioModel(
-                                nombreMunicipio = nombreMunicipio,
-                                imagen = municipioImagen ?: "",
-                                descripcion = municipioDescripcion ?: ""
-                            )
-                            estadoModel.municipios.add(municipio)
-                        }
-                    }
-
-                    estadoModel.numeroPueblos = estadoModel.municipios.size.toString()
+                for (document in documents) {
+                    val estadoModel = parseEstado(document.id, document.data)
                     estados.add(estadoModel)
                 }
                 onSuccess(estados)
             }
-
-            override fun onCancelled(error: DatabaseError) {
-                onFailure(error)
+            .addOnFailureListener { exception ->
+                Log.e("FirestoreDBHelper", "Error obteniendo estados: ${exception.message}")
+                onFailure(exception)
             }
-        })
+    }
+
+    private fun parseEstado(estadoId: String, data: Map<String, Any>): EstadoModel {
+        val nombreEstado = data["nombreEstado"] as? String ?: ""
+        val imagen = data["imagen"] as? String ?: ""
+        val descripcion = data["descripcion"] as? String ?: ""
+
+        val estadoModel = EstadoModel(
+            nombreEstado = nombreEstado,
+            imagen = imagen,
+            descripcion = descripcion,
+            municipios = mutableListOf()
+        )
+
+        Log.d("FirestoreDBHelper", "Estado: $nombreEstado")
+
+        // Ahora obtenemos la colección de municipios anidada dentro del estado
+        firestore.collection("RutasMagicas")
+            .document("Paises")
+            .collection("Mexico")
+            .document(estadoId)
+            .collection("Municipios")
+            .get()
+            .addOnSuccessListener { municipiosDocuments ->
+                for (municipioDocument in municipiosDocuments) {
+                    val municipio = parseMunicipio(municipioDocument.data)
+                    estadoModel.municipios.add(municipio)
+                }
+                estadoModel.numeroPueblos = estadoModel.municipios.size.toString()
+            }
+            .addOnFailureListener { exception ->
+                Log.e("FirestoreDBHelper", "Error obteniendo municipios: ${exception.message}")
+            }
+
+        return estadoModel
+    }
+
+    private fun parseMunicipio(data: Map<String, Any>): MunicipioModel {
+        val nombreMunicipio = data["nombreMunicipio"] as? String ?: ""
+        val municipioImagen = data["imagen"] as? String ?: ""
+        val municipioDescripcion = data["descripcion"] as? String ?: ""
+
+        Log.d("FirestoreDBHelper", "Municipio: $nombreMunicipio")
+
+        return MunicipioModel(
+            nombreMunicipio = nombreMunicipio,
+            imagen = municipioImagen,
+            descripcion = municipioDescripcion
+        )
     }
 }

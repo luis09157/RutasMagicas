@@ -24,7 +24,6 @@ import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.Helper.UtilHelper
-import com.ninodev.rutasmagicas.R
 import com.ninodev.rutasmagicas.databinding.FragmentLoginBinding
 
 class LoginFragment : Fragment() {

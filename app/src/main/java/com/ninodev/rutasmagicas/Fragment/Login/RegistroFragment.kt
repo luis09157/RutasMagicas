@@ -1,4 +1,5 @@
 import android.os.Bundle
+import android.util.Log
 import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Helper.UtilFragment
@@ -32,8 +34,8 @@ class RegistroFragment : Fragment() {
         _binding = FragmentRegistroBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-
         requireActivity().title = getString(R.string.menu_home)
+        hideLoading()
         listeners()
 
         return root
@@ -113,89 +115,118 @@ class RegistroFragment : Fragment() {
             }
 
             if (!termsAccepted) {
-                Snackbar.make(requireView(), getString(R.string.error_terms_not_accepted), Snackbar.LENGTH_LONG)
-                    .show()
+                Snackbar.make(
+                    requireView(),
+                    getString(R.string.error_terms_not_accepted),
+                    Snackbar.LENGTH_LONG
+                ).show()
                 return@setOnClickListener
             }
 
+            showLoading()
+            // Verificar disponibilidad del nombre de usuario y del correo
             checkUserEmailAndNameAvailability(email, name, password)
         }
     }
+    private fun checkUserEmailAndNameAvailability(correo: String, nombreUsuario: String, password: String) {
+        val firestore = FirebaseFirestore.getInstance()
+        val usersCollection = firestore.collection("RutasMagicas/RegistroUsuarios/Usuarios")
 
-    private fun checkUserEmailAndNameAvailability(email: String, name: String, password: String) {
-        val database = FirebaseDatabase.getInstance()
-        val usersRef = database.getReference("users")
-
-        // Try to create a user with the given email
+        // Verificar si el nombre de usuario ya existe
+        usersCollection
+            .whereEqualTo("nombreUsuario", nombreUsuario)
+            .get()
+            .addOnCompleteListener { nameCheckTask ->
+                if (nameCheckTask.isSuccessful) {
+                    if (!nameCheckTask.result.isEmpty) {
+                        hideLoading()
+                        // Nombre de usuario ya existe
+                        binding.txtNombreUsuario.error = getString(R.string.error_username_taken)
+                        binding.txtNombreUsuario.requestFocus()
+                        Snackbar.make(requireView(), getString(R.string.error_username_taken), Snackbar.LENGTH_LONG).show()
+                        Log.e(TAG, "Nombre de usuario ya existente")
+                    } else {
+                        // Nombre de usuario disponible, proceder a crear el usuario
+                        createUserWithEmailAndPassword(correo, password, nombreUsuario)
+                    }
+                } else {
+                    hideLoading()
+                    Log.e(TAG, "Error al verificar el nombre de usuario: ${nameCheckTask.exception?.message}")
+                    Snackbar.make(requireView(), "Error al verificar el nombre de usuario: ${nameCheckTask.exception?.message}", Snackbar.LENGTH_LONG).show()
+                    // Manejo de errores, podrías decidir si quieres continuar o manejar el error de otra manera
+                }
+            }
+    }
+    private fun createUserWithEmailAndPassword(email: String, password: String, nombreUsuario: String) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    // Email is not taken, now check username availability
-                    usersRef.orderByChild("name").equalTo(name).get().addOnCompleteListener { nameCheckTask ->
-                        if (nameCheckTask.isSuccessful) {
-                            if (nameCheckTask.result.exists()) {
-                                // Username is already taken
-                                binding.txtNombreUsuario.error = getString(R.string.error_username_taken)
-                                auth.currentUser?.delete()
-                            } else {
-                                // Both email and username are available
-                                createAccount(name, email)
-                            }
-                        } else {
-                            // Error checking username
-                            createAccount(name, email)
-                        }
-                    }
+                    // Usuario creado exitosamente, ahora guardar los detalles en Firestore
+                    createAccount(nombreUsuario, email)
                 } else {
-                    // Check if the failure is due to the email already being in use
+                    hideLoading()
                     val exception = task.exception
                     if (exception != null && exception.message?.contains("email address is already in use") == true) {
                         binding.txtCorreo.error = getString(R.string.error_email_already_registered)
+                        binding.txtCorreo.requestFocus()
+                        Snackbar.make(requireView(), getString(R.string.error_email_already_registered), Snackbar.LENGTH_LONG).show()
+                        Log.e(TAG, "Error: correo ya registrado")
                     } else {
+                        Log.e(TAG, "Error al crear usuario: ${exception?.message}")
                         Snackbar.make(requireView(), getString(R.string.error_registration_failed), Snackbar.LENGTH_LONG).show()
                     }
                 }
             }
     }
-
-    private fun signOut() {
-        auth.signOut()
-    }
-
-    private fun createAccount(name: String, email: String) {
+    private fun createAccount(nombreUsuario: String, correo: String) {
         val userId = auth.currentUser?.uid
-        val user = User(name, email)
+        val user = User(nombreUsuario, correo)
 
         if (userId != null) {
-            val database = FirebaseDatabase.getInstance()
-            val myRef = database.getReference("users").child(userId)
-            myRef.setValue(user)
-                .addOnCompleteListener {
-                    if (it.isSuccessful) {
+            val firestore = FirebaseFirestore.getInstance()
+            val userRef = firestore.collection("RutasMagicas")
+                .document("RegistroUsuarios")
+                .collection("Usuarios")
+                .document(userId)
+
+            userRef.set(user)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
                         signOut()
                         LoginFragment._FLAG_IS_REGISTRO = true
                         UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
                     } else {
-                        // Error setting user data
+                        hideLoading()
                         Snackbar.make(requireView(), getString(R.string.error_registration_failed), Snackbar.LENGTH_LONG).show()
+
+                        // Intentar eliminar el usuario recién creado en caso de error
+                        auth.currentUser?.let { currentUser ->
+                            currentUser.delete().addOnCompleteListener { deleteTask ->
+                                if (deleteTask.isSuccessful) {
+                                    Log.e(TAG, "Usuario eliminado debido a fallo en la creación en Firestore")
+                                } else {
+                                    Log.e(TAG, "Error eliminando usuario: ${deleteTask.exception?.message}")
+                                }
+                            }
+                        }
                     }
                 }
+        } else {
+            hideLoading()
+            Log.e(TAG, "ID de usuario no encontrado")
+            Snackbar.make(requireView(), getString(R.string.error_registration_failed), Snackbar.LENGTH_LONG).show()
         }
     }
-
-    override fun onResume() {
-        super.onResume()
-        requireActivity().onBackPressedDispatcher.addCallback(
-            viewLifecycleOwner,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
-                }
-            })
+    private fun signOut() {
+        auth.signOut()
+    }
+    private fun showLoading() {
+        binding.lottieLoading.visibility = View.VISIBLE
+        binding.contenedor.visibility = View.GONE
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    private fun hideLoading() {
+        binding.lottieLoading.visibility = View.GONE
+        binding.contenedor.visibility = View.VISIBLE
     }
 }
