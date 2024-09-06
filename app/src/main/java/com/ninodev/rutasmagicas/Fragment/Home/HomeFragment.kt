@@ -43,8 +43,8 @@ class HomeFragment : Fragment() {
 
         requireActivity().title = getString(R.string.menu_home)
 
-        initData()
-        listeners()
+
+
 
         return root
     }
@@ -52,6 +52,8 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         init()
+        initData()
+        listeners()
     }
 
     fun init() {

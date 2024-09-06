@@ -26,11 +26,19 @@ class FirestoreDBHelper {
             .get()
             .addOnSuccessListener { documents ->
                 val estados = mutableListOf<EstadoModel>()
+                var completedEstados = 0 // Contador de estados completados
+
                 for (document in documents) {
-                    val estadoModel = parseEstado(document.id, document.data)
+                    val estadoModel = parseEstado(document.id, document.data) {
+                        // Callback que se ejecuta cuando los municipios se han cargado
+                        completedEstados++
+                        if (completedEstados == documents.size()) {
+                            // Cuando todos los estados han cargado sus municipios, notificar el éxito
+                            onSuccess(estados)
+                        }
+                    }
                     estados.add(estadoModel)
                 }
-                onSuccess(estados)
             }
             .addOnFailureListener { exception ->
                 Log.e("FirestoreDBHelper", "Error obteniendo estados: ${exception.message}")
@@ -38,7 +46,7 @@ class FirestoreDBHelper {
             }
     }
 
-    private fun parseEstado(estadoId: String, data: Map<String, Any>): EstadoModel {
+    private fun parseEstado(estadoId: String, data: Map<String, Any>, onComplete: () -> Unit): EstadoModel {
         val nombreEstado = data["nombreEstado"] as? String ?: ""
         val imagen = data["imagen"] as? String ?: ""
         val descripcion = data["descripcion"] as? String ?: ""
@@ -52,7 +60,7 @@ class FirestoreDBHelper {
 
         Log.d("FirestoreDBHelper", "Estado: $nombreEstado")
 
-        // Ahora obtenemos la colección de municipios anidada dentro del estado
+        // Obtener la colección de municipios
         firestore.collection("RutasMagicas")
             .document("Paises")
             .collection("Mexico")
@@ -65,9 +73,11 @@ class FirestoreDBHelper {
                     estadoModel.municipios.add(municipio)
                 }
                 estadoModel.numeroPueblos = estadoModel.municipios.size.toString()
+                onComplete() // Llamar al callback cuando se hayan cargado los municipios
             }
             .addOnFailureListener { exception ->
                 Log.e("FirestoreDBHelper", "Error obteniendo municipios: ${exception.message}")
+                onComplete() // Llamar al callback aunque ocurra un fallo
             }
 
         return estadoModel
