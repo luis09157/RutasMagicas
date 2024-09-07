@@ -58,6 +58,9 @@ class PueblosMagicosFragment : Fragment() {
             PuebloMagicoDetalleFragment._PUEBLO_MAGICO.nombrePueblo = _ESTADO.municipios.get(i).nombreMunicipio
             PuebloMagicoDetalleFragment._PUEBLO_MAGICO.imagen = _ESTADO.municipios.get(i).imagen
             PuebloMagicoDetalleFragment._PUEBLO_MAGICO.descripcion = _ESTADO.municipios.get(i).descripcion
+            PuebloMagicoDetalleFragment._PUEBLO_MAGICO.latitud = _ESTADO.municipios.get(i).latitud
+            PuebloMagicoDetalleFragment._PUEBLO_MAGICO.longitud = _ESTADO.municipios.get(i).longitud
+
             UtilFragment.changeFragment(requireContext(),PuebloMagicoDetalleFragment(),TAG)
         }
     }

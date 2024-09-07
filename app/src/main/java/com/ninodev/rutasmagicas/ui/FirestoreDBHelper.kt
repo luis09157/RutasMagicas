@@ -87,13 +87,17 @@ class FirestoreDBHelper {
         val nombreMunicipio = data["nombreMunicipio"] as? String ?: ""
         val municipioImagen = data["imagen"] as? String ?: ""
         val municipioDescripcion = data["descripcion"] as? String ?: ""
-
+        val latitud = data["latitud"] as? String ?: ""
+        val longitud = data["longitud"] as? String ?: ""
         Log.d("FirestoreDBHelper", "Municipio: $nombreMunicipio")
 
         return MunicipioModel(
             nombreMunicipio = nombreMunicipio,
             imagen = municipioImagen,
-            descripcion = municipioDescripcion
+            descripcion = municipioDescripcion,
+            latitud = latitud,
+            longitud = longitud
+
         )
     }
 }
