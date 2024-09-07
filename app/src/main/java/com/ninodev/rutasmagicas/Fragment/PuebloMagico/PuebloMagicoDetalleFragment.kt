@@ -13,6 +13,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.airbnb.lottie.LottieAnimationView
 import com.bumptech.glide.Glide
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
@@ -86,27 +87,70 @@ class PuebloMagicoDetalleFragment : Fragment() {
     }
     fun listeners() {
         binding.btnPuebloSeleccionado.setOnClickListener {
+            val currentVisita = _PUEBLO_MAGICO.visita // Asumiendo que tienes un campo en _PUEBLO_MAGICO para la visita
 
-        }
-        binding.btnUbicacion.setOnClickListener {
-            val latitud = _PUEBLO_MAGICO.latitud
-            val longitud = _PUEBLO_MAGICO.longitud
+            val title: String
+            val message: String
+            val positiveButtonText: String
 
-            // Crear la URI para abrir la ubicación directamente en Google Maps
-            val gmmIntentUri = Uri.parse("geo:$latitud,$longitud?q=$latitud,$longitud")
-            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-
-            // Verifica si hay alguna aplicación que pueda manejar el Intent
-            if (mapIntent.resolveActivity(requireActivity().packageManager) != null) {
-                startActivity(mapIntent)
+            // Configurar el mensaje y los botones según el estado actual de la visita
+            if (currentVisita == true) {
+                title = "Quitar visita"
+                message = "¿Deseas quitar tu visita al pueblo mágico ${_PUEBLO_MAGICO.nombrePueblo}?"
+                positiveButtonText = "Quitar"
             } else {
-                // Si no hay Google Maps instalado, opcionalmente, abre en un navegador
-                val url = "https://www.google.com/maps?q=$latitud,$longitud"
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                startActivity(browserIntent)
+                title = "Añadir visita"
+                message = "¿Deseas añadir tu visita al pueblo mágico ${_PUEBLO_MAGICO.nombrePueblo}?"
+                positiveButtonText = "Añadir"
             }
+
+            // Crear y mostrar el diálogo de confirmación
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton(positiveButtonText) { dialog, _ ->
+                    // Acción a realizar al confirmar
+                    toggleVisita()
+                    dialog.dismiss()
+                }
+                .setNegativeButton("Cancelar") { dialog, _ ->
+                    // Acción a realizar al cancelar
+                    dialog.dismiss()
+                }
+                .show()
         }
     }
+
+    fun toggleVisita() {
+        val newVisita = !_PUEBLO_MAGICO.visita // Invertir el estado actual
+        _PUEBLO_MAGICO.visita = newVisita
+
+        // Actualizar Firestore con el nuevo estado de la visita
+        val db = FirebaseFirestore.getInstance()
+        val docRef = db.collection("RutasMagicas")
+            .document("VisitasPueblosMagicos")
+            .collection("Usuarios")
+            .document(HelperUser._ID_USER)
+            .collection(PueblosMagicosFragment._ESTADO.nombreEstado)
+            .document(_PUEBLO_MAGICO.nombrePueblo)
+
+        // Actualiza el campo 'visita' en Firestore
+        docRef.update("visita", newVisita)
+            .addOnSuccessListener {
+                // Cambiar la imagen del botón según el nuevo estado
+                if (newVisita) {
+                    binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_verde)
+                    Snackbar.make(requireView(), "Has añadido tu visita", Snackbar.LENGTH_LONG).show()
+                } else {
+                    binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
+                    Snackbar.make(requireView(), "Has quitado tu visita", Snackbar.LENGTH_LONG).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Snackbar.make(requireView(), "Error al actualizar la visita: ${e.message}", Snackbar.LENGTH_LONG).show()
+            }
+    }
+
     fun initClima() {
         val climaService = ClimaService()
         climaService.getLatestWeather("Apodaca, Nuevo Leon, Mexico", "cthKbWdY4MQgKJZxqn0AcasAF8yqXAng") { temperature, condition ->
@@ -174,21 +218,26 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 if (document.exists()) {
                     // Verifica si el campo "visita" existe
                     val visita = document.getBoolean("visita")
+
                     if (visita == true) {
                         // Si la visita es verdadera, haz algo con la información
                         binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_verde)
                         println("Visita confirmada a $nombreMunicipio en $nombreEstado")
+                        _PUEBLO_MAGICO.visita = visita
                     } else {
                         println("No se ha realizado la visita.")
+                        _PUEBLO_MAGICO.visita = false
                         binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
                     }
                 } else {
+                    _PUEBLO_MAGICO.visita = false
                     binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
                     println("No se encontró el documento.")
                 }
             }
             .addOnFailureListener { exception ->
                 // Manejo de errores
+                _PUEBLO_MAGICO.visita = false
                 binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
                 println("Error al obtener el documento: $exception")
             }
