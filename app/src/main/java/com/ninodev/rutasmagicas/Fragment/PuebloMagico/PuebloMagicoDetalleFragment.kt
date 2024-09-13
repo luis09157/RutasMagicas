@@ -1,6 +1,8 @@
 package com.ninodev.rutasmagicas.Fragment.PuebloMagico
 
 import ClimaService
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -113,6 +115,24 @@ class PuebloMagicoDetalleFragment : Fragment() {
                     dialog.dismiss()
                 }
                 .show()
+        }
+        binding.btnUbicacion.setOnClickListener {
+            val latitud = _PUEBLO_MAGICO.latitud
+            val longitud = _PUEBLO_MAGICO.longitud
+
+            // Crear la URI para abrir la ubicación directamente en Google Maps
+            val gmmIntentUri = Uri.parse("geo:$latitud,$longitud?q=$latitud,$longitud")
+            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+
+            // Verifica si hay alguna aplicación que pueda manejar el Intent
+            if (mapIntent.resolveActivity(requireActivity().packageManager) != null) {
+                startActivity(mapIntent)
+            } else {
+                // Si no hay Google Maps instalado, opcionalmente, abre en un navegador
+                val url = "https://www.google.com/maps?q=$latitud,$longitud"
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                startActivity(browserIntent)
+            }
         }
     }
     fun initClima() {
