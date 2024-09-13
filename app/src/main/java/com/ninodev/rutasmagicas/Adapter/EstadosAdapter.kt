@@ -1,6 +1,7 @@
 package com.ninodev.rutasmagicas.Adapter
 
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,8 +9,10 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import com.bumptech.glide.Glide
+import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.R
+import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
 
 class EstadosAdapter(
     private val context: Context,
@@ -34,11 +37,12 @@ class EstadosAdapter(
 
         if (convertView == null) {
             view = LayoutInflater.from(context).inflate(R.layout.custom_view_estados, parent, false)
-            holder = ViewHolder()
-            holder.imageView = view.findViewById(R.id.imagen_estado)
-            holder.txt_titulo = view.findViewById(R.id.txt_titulo)
-            holder.txt_descripcion = view.findViewById(R.id.txt_descripcion)
-            holder.txt_numero_pueblos = view.findViewById(R.id.txt_numero_pueblos)
+            holder = ViewHolder().apply {
+                imageView = view.findViewById(R.id.imagen_estado)
+                txt_titulo = view.findViewById(R.id.txt_titulo)
+                txt_pueblos_visitados = view.findViewById(R.id.txt_pueblos_visitados)
+                txt_numero_pueblos = view.findViewById(R.id.txt_numero_pueblos)
+            }
             view.tag = holder
         } else {
             view = convertView
@@ -47,9 +51,10 @@ class EstadosAdapter(
 
         val item = getItem(position)
         holder.txt_titulo?.text = item.nombreEstado
-        //holder.txt_descripcion?.text = item.descripcion
-        holder.txt_descripcion?.text = "Visitaste 2 pueblos mágicos."
         val numeroPueblosInt = item.numeroPueblos.toIntOrNull() ?: 0
+
+        // Actualiza el TextView con la información de visitas
+        puebloVisitados(HelperUser.getUserId()!!, item.nombreEstado, holder.txt_pueblos_visitados!!, item.municipios.size)
 
         val texto = if (numeroPueblosInt == 1) {
             "$numeroPueblosInt Pueblo"
@@ -58,7 +63,6 @@ class EstadosAdapter(
         }
 
         holder.txt_numero_pueblos?.text = texto
-
 
         // Usar Glide para cargar la imagen desde la URL
         Glide.with(context)
@@ -70,10 +74,36 @@ class EstadosAdapter(
         return view
     }
 
+    private fun puebloVisitados(idUsuario: String, nombreEstado: String, textView: TextView, totalPueblos: Int) {
+        val firestoreDBHelper = FirestoreDBHelper()
+        firestoreDBHelper.contarPueblosVisitadosEnEstado(idUsuario, nombreEstado, { pueblosVisitados, _ ->
+            textView.text = when {
+                // No ha visitado ningún pueblo
+                pueblosVisitados == 0 -> "No has visitado ningún pueblo."
+                // Ha visitado algunos pero no todos
+                pueblosVisitados in 1 until totalPueblos -> {
+                    val mensaje = if (pueblosVisitados == 1) "pueblo" else "pueblos"
+                    "Has visitado $pueblosVisitados $mensaje."
+                }
+                // Ha visitado todos los pueblos
+                pueblosVisitados == totalPueblos -> "¡Todos los pueblos visitados!"
+                // Caso inesperado
+                else -> "Estado de visitas desconocido."
+            }
+        }, { exception ->
+            // Error al obtener los datos
+            textView.text = "Error. Intenta de nuevo."
+            Log.e("Visitas", "Error al contar las visitas: ${exception.message}")
+        })
+    }
+
+
+
+
     private class ViewHolder {
         var imageView: ImageView? = null
         var txt_titulo: TextView? = null
-        var txt_descripcion: TextView? = null
+        var txt_pueblos_visitados: TextView? = null
         var txt_numero_pueblos: TextView? = null
     }
 }

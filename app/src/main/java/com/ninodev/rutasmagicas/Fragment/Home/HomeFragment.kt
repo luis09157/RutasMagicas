@@ -27,10 +27,13 @@ class HomeFragment : Fragment() {
     private lateinit var firestoreDBHelper: FirestoreDBHelper
     private lateinit var estadosAdapter: EstadosAdapter
     private lateinit var estadosList: MutableList<EstadoModel>
-    companion object {
-        var _TOTAL_PUEBLOS_MAGICOS: Int = 0 // Variable global para el total de pueblos mágicos
-        var _TOTAL_PUEBLOS_VISITADOS: Int = 0
+
+    // Revertido a variables globales para uso en otros fragmentos
+    companion object{
+        var _TOTAL_PUEBLOS_MAGICOS = 0
+        var _TOTAL_PUEBLOS_VISITAS = 0
     }
+
 
     private val binding get() = _binding!!
 
@@ -49,15 +52,22 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Mover la inicialización aquí para evitar la recreación en initData
+        estadosList = mutableListOf()
+        estadosAdapter = EstadosAdapter(requireContext(), estadosList)
+        binding.listaEstados.adapter = estadosAdapter
+
         init()
         initData()
         listeners()
+        handleBackPress() // Registrar el callback de retroceso solo una vez
     }
 
-    fun init() {
+    private fun init() {
         try {
             _TOTAL_PUEBLOS_MAGICOS = 0
-            _TOTAL_PUEBLOS_VISITADOS = 0
+            _TOTAL_PUEBLOS_MAGICOS = 0
             if (HelperUser.isUserLoggedIn()) {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
@@ -70,6 +80,7 @@ class HomeFragment : Fragment() {
                 UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Error: ${e.message}", e) // Registrar el error en el log
             Snackbar.make(requireView(), "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
         }
     }
@@ -84,31 +95,12 @@ class HomeFragment : Fragment() {
     private fun initData() {
         firestoreDBHelper = FirestoreDBHelper()
 
-        estadosList = mutableListOf()
-        estadosAdapter = EstadosAdapter(requireContext(), estadosList)
-        binding.listaEstados.adapter = estadosAdapter
-
         firestoreDBHelper.getEstados(
             onSuccess = { estados ->
+                estadosList.clear() // Limpiar la lista antes de agregar nuevos elementos
                 estadosList.addAll(estados)
                 estadosAdapter.notifyDataSetChanged()
-
-                // Contar visitas true para el usuario
-                val userId = HelperUser.getUserId()
-                if (!userId.isNullOrEmpty()) {
-                    firestoreDBHelper.getAllDataFromUser(
-                        userId,
-                        onComplete = { totalVisits ->
-                            _TOTAL_PUEBLOS_VISITADOS = totalVisits
-                            binding.txtVisitadosPueblos.text = "($totalVisits/${_TOTAL_PUEBLOS_MAGICOS})"
-                            Log.d("HomeFragment", "Total de visitas: $totalVisits")
-                            promedioVisitas()
-                        },
-                        onFailure = { error ->
-                            Snackbar.make(requireView(), "Error al contar visitas: ${error.message}", Snackbar.LENGTH_LONG).show()
-                        }
-                    )
-                }
+                fetchUserVisits() // Separar la lógica de visitas del usuario
             },
             onFailure = { error ->
                 Snackbar.make(requireView(), "Error al obtener los municipios: ${error.message}", Snackbar.LENGTH_LONG).show()
@@ -116,14 +108,25 @@ class HomeFragment : Fragment() {
         )
     }
 
+    private fun fetchUserVisits() {
+        val userId = HelperUser.getUserId()
+        if (!userId.isNullOrEmpty()) {
+            firestoreDBHelper.getAllDataFromUser(
+                userId,
+                onComplete = { totalVisits ->
+                    _TOTAL_PUEBLOS_VISITAS = totalVisits
+                    binding.txtVisitadosPueblos.text = "($totalVisits/$_TOTAL_PUEBLOS_MAGICOS)"
+                    promedioVisitas()
+                },
+                onFailure = { error ->
+                    Snackbar.make(requireView(), "Error al contar visitas: ${error.message}", Snackbar.LENGTH_LONG).show()
+                }
+            )
+        }
+    }
 
-    override fun onResume() {
-        super.onResume()
-
-        promedioVisitas()
-
+    private fun handleBackPress() {
         var doubleBackToExitPressedOnce = false
-
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
@@ -147,17 +150,14 @@ class HomeFragment : Fragment() {
     private fun promedioVisitas() {
         // Evitar la división por cero
         if (_TOTAL_PUEBLOS_MAGICOS == 0) {
-            binding.txtVisitadosPueblos.text = "(0/${_TOTAL_PUEBLOS_MAGICOS})"
+            binding.txtVisitadosPueblos.text = "(0/$_TOTAL_PUEBLOS_MAGICOS)"
             binding.txtPorcentaje.text = "0%"
             binding.progressCircular.progress = 0
             return
         }
 
         // Calcular el porcentaje
-        val porcentajeVisitados = (_TOTAL_PUEBLOS_VISITADOS.toDouble() / _TOTAL_PUEBLOS_MAGICOS.toDouble()) * 100
-
-        // Mostrar la cantidad de visitados y el total
-        binding.txtVisitadosPueblos.text = "($_TOTAL_PUEBLOS_VISITADOS/${_TOTAL_PUEBLOS_MAGICOS})"
+        val porcentajeVisitados = (_TOTAL_PUEBLOS_VISITAS.toDouble() / _TOTAL_PUEBLOS_MAGICOS.toDouble()) * 100
 
         // Animar el porcentaje desde 0 hasta el valor calculado
         ValueAnimator.ofInt(0, porcentajeVisitados.toInt()).apply {
@@ -172,7 +172,6 @@ class HomeFragment : Fragment() {
             start() // Inicia la animación
         }
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()

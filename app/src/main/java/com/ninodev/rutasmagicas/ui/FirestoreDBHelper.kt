@@ -258,8 +258,53 @@ class FirestoreDBHelper {
                 Log.e("FirestoreDBHelper", "Error obteniendo los documentos: ${exception.message}")
                 onFailure(exception)
             }
+    }
 
-}
+    fun contarPueblosVisitadosEnEstado(
+        idUsuario: String,
+        nombreEstado: String,
+        onSuccess: (Int, Int) -> Unit, // (pueblosVisitados, totalPueblos)
+        onFailure: (Exception) -> Unit
+    ) {
+        val collectionRef = firestore.collection("RutasMagicas")
+            .document("VisitasPueblosMagicos")
+            .collection("Usuarios")
+            .document(idUsuario)
+            .collection("Visitas")
+
+        // Filtrar por nombre del estado
+        val query = collectionRef
+            .whereEqualTo("nombreEstado", nombreEstado)
+
+        // Ejecutar la consulta
+        query.get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    var totalPueblos = 0
+                    var pueblosVisitados = 0
+
+                    for (document in querySnapshot) {
+                        val visita = document.getBoolean("visita") == true
+                        totalPueblos++ // Contar todos los pueblos
+                        if (visita) {
+                            pueblosVisitados++ // Contar los que fueron visitados
+                        }
+                    }
+
+                    // Llamar al callback con el número de pueblos visitados y el total
+                    onSuccess(pueblosVisitados, totalPueblos)
+                } else {
+                    // No se encontraron visitas en el estado, retornar 0 en ambos
+                    onSuccess(0, 0)
+                }
+            }
+            .addOnFailureListener { exception ->
+                // Manejar errores
+                Log.e("FirestoreDBHelper", "Error obteniendo los pueblos: ${exception.message}")
+                onFailure(exception)
+            }
+    }
+
 
 
 

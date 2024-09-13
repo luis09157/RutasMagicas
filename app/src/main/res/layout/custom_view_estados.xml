@@ -9,7 +9,7 @@
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
-        android:layout_height="230dp"
+        android:layout_height="250dp"
         style="@style/Widget.Material3.CardView.Filled"
         tools:ignore="MissingConstraints">
         <LinearLayout
@@ -73,26 +73,21 @@
                     android:layout_height="wrap_content"
                     android:text="Zacatecas"
                     android:textColor="@color/black"
-                    app:autoSizeMaxTextSize="18sp"
-                    app:autoSizeMinTextSize="10sp"
+                    android:textSize="17sp"
                     android:layout_marginLeft="10dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="3dp"
                     android:layout_marginRight="10dp"
                     android:fontFamily="@font/poppins_bold"/>
+
                 <TextView
-                    android:id="@+id/txt_descripcion"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textColor="@color/txt_secundario"
+                    android:id="@+id/txt_pueblos_visitados"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_marginLeft="10dp"
-
                     android:layout_marginRight="10dp"
-                    app:autoSizeMaxTextSize="10sp"
-                    app:autoSizeMinTextSize="9sp"
-                    android:text="Visitaste 2 pueblos mágicos."
-                    android:lines="1"/>
+                    android:gravity="left"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textColor="@color/txt_secundario"
+                    android:textSize="14sp" />
             </LinearLayout>
 
 

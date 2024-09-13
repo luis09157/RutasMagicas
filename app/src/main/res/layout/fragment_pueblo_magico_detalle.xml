@@ -108,7 +108,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_weight="0.2"
-                        app:lottie_rawRes="@raw/animacion_soleado"
                         app:lottie_autoPlay="true"
                         app:lottie_loop="true"/>
                     <TextView
