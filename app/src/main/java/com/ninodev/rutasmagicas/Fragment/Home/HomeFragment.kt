@@ -1,5 +1,6 @@
 package com.ninodev.rutasmagicas.Fragment.Home
 
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -28,6 +29,7 @@ class HomeFragment : Fragment() {
     private lateinit var estadosList: MutableList<EstadoModel>
     companion object {
         var _TOTAL_PUEBLOS_MAGICOS: Int = 0 // Variable global para el total de pueblos mágicos
+        var _TOTAL_PUEBLOS_VISITADOS: Int = 0
     }
 
     private val binding get() = _binding!!
@@ -55,6 +57,7 @@ class HomeFragment : Fragment() {
     fun init() {
         try {
             _TOTAL_PUEBLOS_MAGICOS = 0
+            _TOTAL_PUEBLOS_VISITADOS = 0
             if (HelperUser.isUserLoggedIn()) {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
@@ -96,8 +99,10 @@ class HomeFragment : Fragment() {
                     firestoreDBHelper.getAllDataFromUser(
                         userId,
                         onComplete = { totalVisits ->
+                            _TOTAL_PUEBLOS_VISITADOS = totalVisits
                             binding.txtVisitadosPueblos.text = "($totalVisits/${_TOTAL_PUEBLOS_MAGICOS})"
                             Log.d("HomeFragment", "Total de visitas: $totalVisits")
+                            promedioVisitas()
                         },
                         onFailure = { error ->
                             Snackbar.make(requireView(), "Error al contar visitas: ${error.message}", Snackbar.LENGTH_LONG).show()
@@ -114,6 +119,8 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+
+        promedioVisitas()
 
         var doubleBackToExitPressedOnce = false
 
@@ -136,6 +143,36 @@ class HomeFragment : Fragment() {
             }
         )
     }
+
+    private fun promedioVisitas() {
+        // Evitar la división por cero
+        if (_TOTAL_PUEBLOS_MAGICOS == 0) {
+            binding.txtVisitadosPueblos.text = "(0/${_TOTAL_PUEBLOS_MAGICOS})"
+            binding.txtPorcentaje.text = "0%"
+            binding.progressCircular.progress = 0
+            return
+        }
+
+        // Calcular el porcentaje
+        val porcentajeVisitados = (_TOTAL_PUEBLOS_VISITADOS.toDouble() / _TOTAL_PUEBLOS_MAGICOS.toDouble()) * 100
+
+        // Mostrar la cantidad de visitados y el total
+        binding.txtVisitadosPueblos.text = "($_TOTAL_PUEBLOS_VISITADOS/${_TOTAL_PUEBLOS_MAGICOS})"
+
+        // Animar el porcentaje desde 0 hasta el valor calculado
+        ValueAnimator.ofInt(0, porcentajeVisitados.toInt()).apply {
+            duration = 1000 // Duración de la animación en milisegundos
+            addUpdateListener { animator ->
+                val porcentajeAnimado = animator.animatedValue as Int
+                // Actualiza el porcentaje de texto
+                binding.txtPorcentaje.text = "$porcentajeAnimado%"
+                // Actualiza el progreso del CircularProgressIndicator
+                binding.progressCircular.progress = porcentajeAnimado
+            }
+            start() // Inicia la animación
+        }
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.Model.MunicipioModel
+import com.ninodev.rutasmagicas.Model.PuebloMagicoModel
 
 class FirestoreDBHelper {
 
@@ -146,9 +147,119 @@ class FirestoreDBHelper {
     }
 
 
+    fun toggleVisita(
+        userId: String,
+        estado: String,
+        municipio: String,
+        puebloMagico: PuebloMagicoModel,
+        onSuccess: (Boolean) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val newVisita = !puebloMagico.visita // Invertir el estado actual
+        puebloMagico.visita = newVisita
+
+        // Referencia a la colección "Visitas" dentro del usuario
+        val collectionRef = firestore.collection("RutasMagicas")
+            .document("VisitasPueblosMagicos")
+            .collection("Usuarios")
+            .document(userId)
+            .collection("Visitas")
+
+        // Consulta para buscar el documento que coincide con el estado y municipio
+        val query = collectionRef
+            .whereEqualTo("nombreEstado", estado)
+            .whereEqualTo("nombreMunicipio", municipio)
+
+        // Ejecutar la consulta
+        query.get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    // Recorrer los resultados de la consulta
+                    for (document in querySnapshot) {
+                        // Actualizar el campo 'visita' en Firestore
+                        document.reference.update("visita", newVisita)
+                            .addOnSuccessListener {
+                                onSuccess(newVisita) // Notificar el éxito
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("FirestoreDBHelper", "Error actualizando la visita: ${e.message}")
+                                onFailure(e) // Notificar el fallo
+                            }
+                    }
+                } else {
+                    // Si no se encuentra ningún documento, agregar uno nuevo
+                    val newVisitaData = mapOf(
+                        "nombreEstado" to estado,
+                        "nombreMunicipio" to municipio,
+                        "visita" to true // Establecer la visita como true por defecto
+                    )
+
+                    collectionRef.add(newVisitaData)
+                        .addOnSuccessListener {
+                            puebloMagico.visita = true // Actualizar el modelo
+                            onSuccess(true) // Notificar el éxito
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("FirestoreDBHelper", "Error agregando el nuevo registro: ${e.message}")
+                            onFailure(e) // Notificar el fallo
+                        }
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("FirestoreDBHelper", "Error obteniendo los documentos: ${exception.message}")
+                onFailure(exception) // Notificar el fallo
+            }
+    }
 
 
+    fun leerVisitas(
+        idUsuario: String,
+        nombreEstado: String,
+        nombreMunicipio: String,
+        onVisitFound: () -> Unit, // Callback si la visita es encontrada (visita == true)
+        onVisitNotFound: () -> Unit, // Callback si la visita no es encontrada (visita == false o no existe)
+        onFailure: (Exception) -> Unit // Callback para manejar errores
+    ) {
+        // Navegar en la estructura de Firestore
+        val collectionRef = firestore.collection("RutasMagicas")
+            .document("VisitasPueblosMagicos")
+            .collection("Usuarios")
+            .document(idUsuario)
+            .collection("Visitas") // Subcolección de visitas
 
+        // Consulta para buscar el documento que coincide con el estado y municipio
+        val query = collectionRef
+            .whereEqualTo("nombreEstado", nombreEstado)
+            .whereEqualTo("nombreMunicipio", nombreMunicipio)
+
+        // Ejecutar la consulta
+        query.get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    // Recorre los resultados de la consulta
+                    for (document in querySnapshot) {
+                        val visita = document.getBoolean("visita")
+
+                        if (visita == true) {
+                            // Si la visita es verdadera, ejecutar el callback
+                            onVisitFound()
+                        } else {
+                            // Si no se ha realizado la visita
+                            onVisitNotFound()
+                        }
+                    }
+                } else {
+                    // No se encontraron documentos, ejecutar callback de visita no encontrada
+                    onVisitNotFound()
+                }
+            }
+            .addOnFailureListener { exception ->
+                // Manejar cualquier error y ejecutar el callback de error
+                Log.e("FirestoreDBHelper", "Error obteniendo los documentos: ${exception.message}")
+                onFailure(exception)
+            }
+
+}
 
 
 

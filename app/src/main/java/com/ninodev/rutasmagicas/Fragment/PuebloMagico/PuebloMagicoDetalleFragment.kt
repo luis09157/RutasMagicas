@@ -1,10 +1,6 @@
 package com.ninodev.rutasmagicas.Fragment.PuebloMagico
 
 import ClimaService
-import android.app.Activity
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -24,23 +20,22 @@ import com.ninodev.rutasmagicas.Model.ClimaModel
 import com.ninodev.rutasmagicas.Model.PuebloMagicoModel
 import com.ninodev.rutasmagicas.R
 import com.ninodev.rutasmagicas.databinding.FragmentPuebloMagicoDetalleBinding
+import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
 
 class PuebloMagicoDetalleFragment : Fragment() {
     private val TAG = "PuebloMagicoDetalleFragment"
     private var _binding: FragmentPuebloMagicoDetalleBinding? = null
     private lateinit var animacionClima: LottieAnimationView
-
+    val firestoreHelper = FirestoreDBHelper()
 
     private lateinit var climaService: ClimaService
 
     private val binding get() = _binding!!
 
-
-    companion object{
-        var _PUEBLO_MAGICO : PuebloMagicoModel = PuebloMagicoModel()
-        var _CLIMA : ClimaModel = ClimaModel()
+    companion object {
+        var _PUEBLO_MAGICO: PuebloMagicoModel = PuebloMagicoModel()
+        var _CLIMA: ClimaModel = ClimaModel()
     }
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,7 +51,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
         initClima()
         listeners()
 
-
         return root
     }
 
@@ -65,6 +59,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
         animacionClima = binding.animacionClima
         init()
     }
+
     fun init() {
         try {
             if (HelperUser.isUserLoggedIn()) {
@@ -73,18 +68,18 @@ class PuebloMagicoDetalleFragment : Fragment() {
                     HelperUser._ID_USER = userId
                     Snackbar.make(requireView(), userId, Snackbar.LENGTH_LONG).show()
 
-                    leerVisitas(HelperUser._ID_USER, PueblosMagicosFragment._ESTADO.nombreEstado ,_PUEBLO_MAGICO.nombrePueblo)
+                    leerVisitas(PueblosMagicosFragment._ESTADO.nombreEstado, _PUEBLO_MAGICO.nombrePueblo)
                 } else {
                     Snackbar.make(requireView(), "User ID is null or empty", Snackbar.LENGTH_LONG).show()
                 }
             } else {
                 UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
             }
-        }catch (e : Exception){
+        } catch (e: Exception) {
             Snackbar.make(requireView(), "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
         }
-
     }
+
     fun listeners() {
         binding.btnPuebloSeleccionado.setOnClickListener {
             val currentVisita = _PUEBLO_MAGICO.visita // Asumiendo que tienes un campo en _PUEBLO_MAGICO para la visita
@@ -120,44 +115,14 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 .show()
         }
     }
-
-    fun toggleVisita() {
-        val newVisita = !_PUEBLO_MAGICO.visita // Invertir el estado actual
-        _PUEBLO_MAGICO.visita = newVisita
-
-        // Actualizar Firestore con el nuevo estado de la visita
-        val db = FirebaseFirestore.getInstance()
-        val docRef = db.collection("RutasMagicas")
-            .document("VisitasPueblosMagicos")
-            .collection("Usuarios")
-            .document(HelperUser._ID_USER)
-            .collection(PueblosMagicosFragment._ESTADO.nombreEstado)
-            .document(_PUEBLO_MAGICO.nombrePueblo)
-
-        // Actualiza el campo 'visita' en Firestore
-        docRef.update("visita", newVisita)
-            .addOnSuccessListener {
-                // Cambiar la imagen del botón según el nuevo estado
-                if (newVisita) {
-                    binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_verde)
-                    Snackbar.make(requireView(), "Has añadido tu visita", Snackbar.LENGTH_LONG).show()
-                } else {
-                    binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
-                    Snackbar.make(requireView(), "Has quitado tu visita", Snackbar.LENGTH_LONG).show()
-                }
-            }
-            .addOnFailureListener { e ->
-                Snackbar.make(requireView(), "Error al actualizar la visita: ${e.message}", Snackbar.LENGTH_LONG).show()
-            }
-    }
-
     fun initClima() {
         val climaService = ClimaService()
-        climaService.getLatestWeather("Apodaca, Nuevo Leon, Mexico", "cthKbWdY4MQgKJZxqn0AcasAF8yqXAng") { temperature, condition ->
+        climaService.getLatestWeather("${_PUEBLO_MAGICO.nombrePueblo}, ${PueblosMagicosFragment._ESTADO.nombreEstado}, Mexico", "cthKbWdY4MQgKJZxqn0AcasAF8yqXAng") { temperature, condition ->
             println("Temperatura: $temperature°C")
             println("Condición: ${condition?.description ?: "No disponible"}")
             _CLIMA.Temperatura = "$temperature°C"
             _CLIMA.Condicion = "${condition?.description ?: "No disponible"}"
+            binding.txtClima.text = _CLIMA.Condicion
 
             // Cambiar la animación según la condición del clima en el hilo principal
             activity?.runOnUiThread {
@@ -173,9 +138,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
         }
     }
 
-
-
-    fun initData(){
+    fun initData() {
         Glide.with(requireContext())
             .load(_PUEBLO_MAGICO.imagen)
             .placeholder(R.drawable.ic_launcher_background) // Imagen de marcador de posición
@@ -184,8 +147,8 @@ class PuebloMagicoDetalleFragment : Fragment() {
 
         binding.txtTitulo.text = _PUEBLO_MAGICO.nombrePueblo
         binding.txtDescripcion.text = _PUEBLO_MAGICO.descripcion
-
     }
+
     override fun onResume() {
         super.onResume()
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -196,51 +159,54 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 }
             })
     }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
-    fun leerVisitas(idUsuario: String, nombreEstado: String, nombreMunicipio: String) {
-        // Obtén una instancia de Firestore
-        val db = FirebaseFirestore.getInstance()
 
-        // Navega en la estructura de la colección
-        val docRef = db.collection("RutasMagicas")
-            .document("VisitasPueblosMagicos")
-            .collection("Usuarios")
-            .document(idUsuario)
-            .collection(nombreEstado)
-            .document(nombreMunicipio)
-
-        // Accede al documento que contiene la propiedad "visita"
-        docRef.get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    // Verifica si el campo "visita" existe
-                    val visita = document.getBoolean("visita")
-
-                    if (visita == true) {
-                        // Si la visita es verdadera, haz algo con la información
-                        binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_verde)
-                        println("Visita confirmada a $nombreMunicipio en $nombreEstado")
-                        _PUEBLO_MAGICO.visita = visita
-                    } else {
-                        println("No se ha realizado la visita.")
-                        _PUEBLO_MAGICO.visita = false
-                        binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
-                    }
+    fun toggleVisita() {
+        firestoreHelper.toggleVisita(
+            userId = HelperUser._ID_USER,
+            estado = PueblosMagicosFragment._ESTADO.nombreEstado,
+            municipio = _PUEBLO_MAGICO.nombrePueblo,
+            puebloMagico = _PUEBLO_MAGICO,
+            onSuccess = { newVisita ->
+                if (newVisita) {
+                    binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_verde)
+                    Snackbar.make(requireView(), "Has añadido tu visita", Snackbar.LENGTH_LONG).show()
                 } else {
-                    _PUEBLO_MAGICO.visita = false
                     binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
-                    println("No se encontró el documento.")
+                    Snackbar.make(requireView(), "Has quitado tu visita", Snackbar.LENGTH_LONG).show()
                 }
+            },
+            onFailure = { exception ->
+                Snackbar.make(requireView(), "Error al actualizar la visita: ${exception.message}", Snackbar.LENGTH_LONG).show()
             }
-            .addOnFailureListener { exception ->
-                // Manejo de errores
-                _PUEBLO_MAGICO.visita = false
+        )
+    }
+
+    fun leerVisitas(nombreEstado: String, nombreMunicipio: String) {
+        firestoreHelper.leerVisitas(
+            idUsuario = HelperUser._ID_USER,
+            nombreEstado = PueblosMagicosFragment._ESTADO.nombreEstado,
+            nombreMunicipio = _PUEBLO_MAGICO.nombrePueblo,
+            onVisitFound = {
+                // Acción cuando la visita es encontrada
+                binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_verde)
+                Snackbar.make(requireView(), "Visita confirmada a $nombreMunicipio en $nombreEstado", Snackbar.LENGTH_LONG).show()
+                _PUEBLO_MAGICO.visita = true
+            },
+            onVisitNotFound = {
+                // Acción cuando no se encuentra la visita
                 binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
-                println("Error al obtener el documento: $exception")
+                _PUEBLO_MAGICO.visita = false
+            },
+            onFailure = { exception ->
+                // Manejo de errores
+                Snackbar.make(requireView(), "Error al obtener los documentos: ${exception.message}", Snackbar.LENGTH_LONG).show()
             }
+        )
     }
 
 }
