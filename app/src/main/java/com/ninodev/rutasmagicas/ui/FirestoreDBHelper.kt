@@ -76,7 +76,7 @@ class FirestoreDBHelper {
                     estadoModel.municipios.add(municipio)
                 }
                 estadoModel.numeroPueblos = estadoModel.municipios.size.toString()
-                HomeFragment._TOTAL_PUEBLOS_MAGICOS += estadoModel.municipios.size
+                HomeFragment.TOTAL_PUEBLOS_MAGICOS += estadoModel.municipios.size
                 onComplete() // Llamar al callback cuando se hayan cargado los municipios
             }
             .addOnFailureListener { exception ->

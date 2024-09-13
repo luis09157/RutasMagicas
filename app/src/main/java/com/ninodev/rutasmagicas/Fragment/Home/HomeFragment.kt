@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.appcompat.widget.SearchView
 import com.google.android.material.snackbar.Snackbar
 import com.ninodev.rutasmagicas.Adapter.EstadosAdapter
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
@@ -22,18 +23,16 @@ import com.ninodev.rutasmagicas.databinding.FragmentHomeBinding
 import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
 
 class HomeFragment : Fragment() {
-    private val TAG = "FragmentEstados"
+    private val TAG = "HomeFragment"
     private var _binding: FragmentHomeBinding? = null
     private lateinit var firestoreDBHelper: FirestoreDBHelper
     private lateinit var estadosAdapter: EstadosAdapter
     private lateinit var estadosList: MutableList<EstadoModel>
 
-    // Revertido a variables globales para uso en otros fragmentos
-    companion object{
-        var _TOTAL_PUEBLOS_MAGICOS = 0
-        var _TOTAL_PUEBLOS_VISITAS = 0
+    companion object {
+        var TOTAL_PUEBLOS_MAGICOS = 0
+        var TOTAL_PUEBLOS_VISITAS = 0
     }
-
 
     private val binding get() = _binding!!
 
@@ -41,55 +40,63 @@ class HomeFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
+    ): View? {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        val root: View = binding.root
-
-        requireActivity().title = getString(R.string.menu_home)
-
-        return root
+        return _binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Mover la inicialización aquí para evitar la recreación en initData
         estadosList = mutableListOf()
         estadosAdapter = EstadosAdapter(requireContext(), estadosList)
-        binding.listaEstados.adapter = estadosAdapter
+        _binding?.listaEstados?.adapter = estadosAdapter
 
         init()
         initData()
         listeners()
-        handleBackPress() // Registrar el callback de retroceso solo una vez
+        handleBackPress()
     }
 
     private fun init() {
         try {
-            _TOTAL_PUEBLOS_MAGICOS = 0
-            _TOTAL_PUEBLOS_MAGICOS = 0
+            TOTAL_PUEBLOS_MAGICOS = 0
             if (HelperUser.isUserLoggedIn()) {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
                     HelperUser._ID_USER = userId
-                    Snackbar.make(requireView(), userId, Snackbar.LENGTH_LONG).show()
+                    Snackbar.make(requireView(), "Usuario ID: $userId", Snackbar.LENGTH_LONG).show()
                 } else {
-                    Snackbar.make(requireView(), "User ID is null or empty", Snackbar.LENGTH_LONG).show()
+                    Snackbar.make(requireView(), "El ID de usuario es nulo o vacío", Snackbar.LENGTH_LONG).show()
                 }
             } else {
                 UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error: ${e.message}", e) // Registrar el error en el log
+            Log.e(TAG, "Error: ${e.message}", e)
             Snackbar.make(requireView(), "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
         }
     }
 
     private fun listeners() {
-        binding.listaEstados.setOnItemClickListener { adapterView, view, i, l ->
+        _binding?.listaEstados?.setOnItemClickListener { _, _, i, _ ->
             PueblosMagicosFragment._ESTADO = estadosList[i]
             UtilFragment.changeFragment(requireContext(), PueblosMagicosFragment(), TAG)
         }
+
+        // Configurar el SearchView para búsqueda
+        val searchView = _binding?.searchView
+        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                // Opcionalmente, maneja el evento cuando el usuario envía la búsqueda
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterList(newText.orEmpty())
+                return true
+            }
+        })
     }
 
     private fun initData() {
@@ -97,10 +104,10 @@ class HomeFragment : Fragment() {
 
         firestoreDBHelper.getEstados(
             onSuccess = { estados ->
-                estadosList.clear() // Limpiar la lista antes de agregar nuevos elementos
+                estadosList.clear()
                 estadosList.addAll(estados)
                 estadosAdapter.notifyDataSetChanged()
-                fetchUserVisits() // Separar la lógica de visitas del usuario
+                fetchUserVisits()
             },
             onFailure = { error ->
                 Snackbar.make(requireView(), "Error al obtener los municipios: ${error.message}", Snackbar.LENGTH_LONG).show()
@@ -114,8 +121,8 @@ class HomeFragment : Fragment() {
             firestoreDBHelper.getAllDataFromUser(
                 userId,
                 onComplete = { totalVisits ->
-                    _TOTAL_PUEBLOS_VISITAS = totalVisits
-                    binding.txtVisitadosPueblos.text = "($totalVisits/$_TOTAL_PUEBLOS_MAGICOS)"
+                    TOTAL_PUEBLOS_VISITAS = totalVisits
+                    _binding?.txtVisitadosPueblos?.text = "($totalVisits/$TOTAL_PUEBLOS_MAGICOS)"
                     promedioVisitas()
                 },
                 onFailure = { error ->
@@ -148,28 +155,39 @@ class HomeFragment : Fragment() {
     }
 
     private fun promedioVisitas() {
-        // Evitar la división por cero
-        if (_TOTAL_PUEBLOS_MAGICOS == 0) {
-            binding.txtVisitadosPueblos.text = "(0/$_TOTAL_PUEBLOS_MAGICOS)"
-            binding.txtPorcentaje.text = "0%"
-            binding.progressCircular.progress = 0
+        if (TOTAL_PUEBLOS_MAGICOS == 0) {
+            _binding?.txtVisitadosPueblos?.text = "(0/$TOTAL_PUEBLOS_MAGICOS)"
+            _binding?.txtPorcentaje?.text = "0%"
+            _binding?.progressCircular?.progress = 0
             return
         }
 
-        // Calcular el porcentaje
-        val porcentajeVisitados = (_TOTAL_PUEBLOS_VISITAS.toDouble() / _TOTAL_PUEBLOS_MAGICOS.toDouble()) * 100
+        val porcentajeVisitados = (TOTAL_PUEBLOS_VISITAS.toDouble() / TOTAL_PUEBLOS_MAGICOS.toDouble()) * 100
 
-        // Animar el porcentaje desde 0 hasta el valor calculado
         ValueAnimator.ofInt(0, porcentajeVisitados.toInt()).apply {
-            duration = 1000 // Duración de la animación en milisegundos
+            duration = 1000
             addUpdateListener { animator ->
                 val porcentajeAnimado = animator.animatedValue as Int
-                // Actualiza el porcentaje de texto
-                binding.txtPorcentaje.text = "$porcentajeAnimado%"
-                // Actualiza el progreso del CircularProgressIndicator
-                binding.progressCircular.progress = porcentajeAnimado
+                _binding?.txtPorcentaje?.text = "$porcentajeAnimado%"
+                _binding?.progressCircular?.progress = porcentajeAnimado
             }
-            start() // Inicia la animación
+            start()
+        }
+    }
+
+    private fun filterList(query: String) {
+        val filtered = estadosList.filter { estado ->
+            estado.nombreEstado.contains(query, ignoreCase = true)
+        }
+        estadosAdapter.updateList(filtered)
+
+        // Mostrar u ocultar el mensaje de no resultados
+        if (filtered.isEmpty()) {
+            _binding?.txtNoResults?.visibility = View.VISIBLE
+            _binding?.listaEstados?.visibility = View.GONE
+        } else {
+            _binding?.txtNoResults?.visibility = View.GONE
+            _binding?.listaEstados?.visibility = View.VISIBLE
         }
     }
 

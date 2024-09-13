@@ -16,7 +16,7 @@ import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
 
 class EstadosAdapter(
     private val context: Context,
-    private val items: List<EstadoModel>
+    private var items: List<EstadoModel> // Cambiar a var para poder actualizar la lista
 ) : BaseAdapter() {
 
     override fun getCount(): Int {
@@ -97,8 +97,11 @@ class EstadosAdapter(
         })
     }
 
-
-
+    // Método para actualizar la lista de elementos
+    fun updateList(newItems: List<EstadoModel>) {
+        items = newItems
+        notifyDataSetChanged()
+    }
 
     private class ViewHolder {
         var imageView: ImageView? = null

@@ -20,8 +20,8 @@ class PueblosMagicosFragment : Fragment() {
     private var _binding: FragmentPueblosMagicosBinding? = null
     private val binding get() = _binding!!
 
-    companion object{
-        var _ESTADO : EstadoModel = EstadoModel()
+    companion object {
+        var _ESTADO: EstadoModel = EstadoModel()
     }
 
     override fun onCreateView(
@@ -40,30 +40,41 @@ class PueblosMagicosFragment : Fragment() {
         return root
     }
 
-    fun initData(){
-        Glide.with(requireContext())
-            .load(_ESTADO.imagen)
-            .placeholder(R.drawable.ic_launcher_background) // Imagen de marcador de posición
-            .error(R.drawable.estado_nuevo_leon) // Imagen de error en caso de fallo
-            .into(binding.imagenMunicipio)
+    private fun initData() {
+        _binding?.let { binding ->
+            Glide.with(requireContext())
+                .load(_ESTADO.imagen)
+                .placeholder(R.drawable.ic_launcher_background) // Imagen de marcador de posición
+                .error(R.drawable.estado_nuevo_leon) // Imagen de error en caso de fallo
+                .into(binding.imagenMunicipio)
 
-        binding.txtTitulo.text = _ESTADO.nombreEstado
-        binding.txtDescripcion.text = _ESTADO.descripcion
+            binding.txtTitulo.text = _ESTADO.nombreEstado
+            binding.txtDescripcion.text = _ESTADO.descripcion
 
-        val adapter = PueblosMagicosAdapter(requireContext(), _ESTADO.municipios)
-        binding.gridPueblosMagicos.adapter = adapter
-    }
-    fun listeners(){
-        binding.gridPueblosMagicos.setOnItemClickListener { adapterView, view, i, l ->
-            PuebloMagicoDetalleFragment._PUEBLO_MAGICO.nombrePueblo = _ESTADO.municipios.get(i).nombreMunicipio
-            PuebloMagicoDetalleFragment._PUEBLO_MAGICO.imagen = _ESTADO.municipios.get(i).imagen
-            PuebloMagicoDetalleFragment._PUEBLO_MAGICO.descripcion = _ESTADO.municipios.get(i).descripcion
-            PuebloMagicoDetalleFragment._PUEBLO_MAGICO.latitud = _ESTADO.municipios.get(i).latitud
-            PuebloMagicoDetalleFragment._PUEBLO_MAGICO.longitud = _ESTADO.municipios.get(i).longitud
-
-            UtilFragment.changeFragment(requireContext(),PuebloMagicoDetalleFragment(),TAG)
+            val adapter = PueblosMagicosAdapter(requireContext(), _ESTADO.municipios)
+            binding.gridPueblosMagicos.adapter = adapter
         }
     }
+
+    private fun listeners() {
+        _binding?.let { binding ->
+            binding.gridPueblosMagicos.setOnItemClickListener { _, _, i, _ ->
+                if (i in _ESTADO.municipios.indices) { // Validar índice
+                    val municipio = _ESTADO.municipios[i]
+                    PuebloMagicoDetalleFragment._PUEBLO_MAGICO.apply {
+                        nombrePueblo = municipio.nombreMunicipio
+                        imagen = municipio.imagen
+                        descripcion = municipio.descripcion
+                        latitud = municipio.latitud
+                        longitud = municipio.longitud
+                    }
+
+                    UtilFragment.changeFragment(requireContext(), PuebloMagicoDetalleFragment(), TAG)
+                }
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -72,7 +83,8 @@ class PueblosMagicosFragment : Fragment() {
                 override fun handleOnBackPressed() {
                     UtilFragment.changeFragment(requireContext(), HomeFragment(), TAG)
                 }
-            })
+            }
+        )
     }
 
     override fun onDestroyView() {

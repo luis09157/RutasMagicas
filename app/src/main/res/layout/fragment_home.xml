@@ -39,6 +39,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:orientation="vertical">
+
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -59,6 +60,7 @@
                         app:layout_constraintWidth_percent="0.5"
                         app:trackColor="@color/color_verde_suave"
                         app:trackThickness="5dp" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -80,6 +82,7 @@
                     </LinearLayout>
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
+
                 <TextView
                     android:id="@+id/txt_visitados_pueblos"
                     android:layout_width="match_parent"
@@ -97,20 +100,38 @@
 
         </LinearLayout>
 
-        <com.google.android.material.search.SearchBar
-            android:id="@+id/search_bar"
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/searchView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="@color/gris_claro"
-            android:hint="Buscar" />
+            android:queryHint="Buscar estados"
+            android:background="@drawable/search_view_background"
+            android:layout_margin="10dp"
+            android:iconifiedByDefault="false"
+            app:queryBackground="@drawable/search_view_query_background"
+            app:closeIcon="@drawable/ic_close"
+            app:searchIcon="@drawable/ic_search"/>
 
+
+        <TextView
+            android:id="@+id/txt_no_results"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No se encontraron resultados"
+            android:textColor="@color/black"
+            android:visibility="gone"
+            android:gravity="center"
+            android:layout_marginTop="16dp"/>
 
         <GridView
             android:id="@+id/lista_estados"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:numColumns="2"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:focusable="false"
+            android:focusableInTouchMode="false" />
+
     </LinearLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView

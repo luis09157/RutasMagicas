@@ -1,8 +1,6 @@
 package com.ninodev.rutasmagicas.Fragment.PuebloMagico
 
 import ClimaService
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -116,47 +114,33 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 }
                 .show()
         }
-        binding.btnUbicacion.setOnClickListener {
-            val latitud = _PUEBLO_MAGICO.latitud
-            val longitud = _PUEBLO_MAGICO.longitud
-
-            // Crear la URI para abrir la ubicación directamente en Google Maps
-            val gmmIntentUri = Uri.parse("geo:$latitud,$longitud?q=$latitud,$longitud")
-            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-
-            // Verifica si hay alguna aplicación que pueda manejar el Intent
-            if (mapIntent.resolveActivity(requireActivity().packageManager) != null) {
-                startActivity(mapIntent)
-            } else {
-                // Si no hay Google Maps instalado, opcionalmente, abre en un navegador
-                val url = "https://www.google.com/maps?q=$latitud,$longitud"
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                startActivity(browserIntent)
-            }
-        }
     }
     fun initClima() {
-        val climaService = ClimaService()
+        climaService = ClimaService() // Use the property if it's not already initialized
         climaService.getLatestWeather("${_PUEBLO_MAGICO.nombrePueblo}, ${PueblosMagicosFragment._ESTADO.nombreEstado}, Mexico", "cthKbWdY4MQgKJZxqn0AcasAF8yqXAng") { temperature, condition ->
             println("Temperatura: $temperature°C")
             println("Condición: ${condition?.description ?: "No disponible"}")
             _CLIMA.Temperatura = "$temperature°C"
             _CLIMA.Condicion = "${condition?.description ?: "No disponible"}"
-            binding.txtClima.text = _CLIMA.Condicion
 
-            // Cambiar la animación según la condición del clima en el hilo principal
+            // Verificar si _binding no es null antes de acceder a sus propiedades
             activity?.runOnUiThread {
-                when (condition) {
-                    ClimaService.WeatherCondition.CLEAR -> animacionClima.setAnimation(R.raw.animacion_soleado)
-                    ClimaService.WeatherCondition.CLOUDY -> animacionClima.setAnimation(R.raw.animacion_nublado)
-                    ClimaService.WeatherCondition.RAINY -> animacionClima.setAnimation(R.raw.animacion_lluvioso)
-                    ClimaService.WeatherCondition.SNOWY -> animacionClima.setAnimation(R.raw.animacion_nevando)
-                    else -> animacionClima.setAnimation(R.raw.animacion_soleado)
+                _binding?.let { binding ->
+                    binding.txtClima.text = _CLIMA.Condicion
+                    when (condition) {
+                        ClimaService.WeatherCondition.CLEAR -> animacionClima.setAnimation(R.raw.animacion_soleado)
+                        ClimaService.WeatherCondition.CLOUDY -> animacionClima.setAnimation(R.raw.animacion_nublado)
+                        ClimaService.WeatherCondition.RAINY -> animacionClima.setAnimation(R.raw.animacion_lluvioso)
+                        ClimaService.WeatherCondition.SNOWY -> animacionClima.setAnimation(R.raw.animacion_nevando)
+                        else -> animacionClima.setAnimation(R.raw.animacion_soleado)
+                    }
+                    animacionClima.playAnimation() // Iniciar la animación
                 }
-                animacionClima.playAnimation() // Iniciar la animación
             }
         }
     }
+
+
 
     fun initData() {
         Glide.with(requireContext())
