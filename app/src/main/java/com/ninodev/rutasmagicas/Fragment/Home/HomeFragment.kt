@@ -1,7 +1,5 @@
 package com.ninodev.rutasmagicas.Fragment.Home
 
-import android.graphics.Typeface
-import android.nfc.Tag
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,11 +7,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.google.android.material.search.SearchBar
 import com.google.android.material.snackbar.Snackbar
 import com.ninodev.rutasmagicas.Adapter.EstadosAdapter
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
@@ -31,6 +26,10 @@ class HomeFragment : Fragment() {
     private lateinit var firestoreDBHelper: FirestoreDBHelper
     private lateinit var estadosAdapter: EstadosAdapter
     private lateinit var estadosList: MutableList<EstadoModel>
+    companion object {
+        var _TOTAL_PUEBLOS_MAGICOS: Int = 0 // Variable global para el total de pueblos mágicos
+    }
+
     private val binding get() = _binding!!
 
     override fun onCreateView(
@@ -42,9 +41,6 @@ class HomeFragment : Fragment() {
         val root: View = binding.root
 
         requireActivity().title = getString(R.string.menu_home)
-
-
-
 
         return root
     }
@@ -58,6 +54,7 @@ class HomeFragment : Fragment() {
 
     fun init() {
         try {
+            _TOTAL_PUEBLOS_MAGICOS = 0
             if (HelperUser.isUserLoggedIn()) {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
@@ -69,17 +66,15 @@ class HomeFragment : Fragment() {
             } else {
                 UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
             }
-        }catch (e : Exception){
+        } catch (e: Exception) {
             Snackbar.make(requireView(), "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
         }
-
     }
 
     private fun listeners() {
         binding.listaEstados.setOnItemClickListener { adapterView, view, i, l ->
             PueblosMagicosFragment._ESTADO = estadosList[i]
-            UtilFragment.changeFragment(requireContext(),PueblosMagicosFragment(),TAG)
-
+            UtilFragment.changeFragment(requireContext(), PueblosMagicosFragment(), TAG)
         }
     }
 
@@ -94,12 +89,28 @@ class HomeFragment : Fragment() {
             onSuccess = { estados ->
                 estadosList.addAll(estados)
                 estadosAdapter.notifyDataSetChanged()
+
+                // Contar visitas true para el usuario
+                val userId = HelperUser.getUserId()
+                if (!userId.isNullOrEmpty()) {
+                    firestoreDBHelper.getAllDataFromUser(
+                        userId,
+                        onComplete = { totalVisits ->
+                            binding.txtVisitadosPueblos.text = "($totalVisits/${_TOTAL_PUEBLOS_MAGICOS})"
+                            Log.d("HomeFragment", "Total de visitas: $totalVisits")
+                        },
+                        onFailure = { error ->
+                            Snackbar.make(requireView(), "Error al contar visitas: ${error.message}", Snackbar.LENGTH_LONG).show()
+                        }
+                    )
+                }
             },
             onFailure = { error ->
-               Snackbar.make(requireView(), "Error al obtener los municipios: ${error.message}", Snackbar.LENGTH_LONG).show()
+                Snackbar.make(requireView(), "Error al obtener los municipios: ${error.message}", Snackbar.LENGTH_LONG).show()
             }
         )
     }
+
 
     override fun onResume() {
         super.onResume()
@@ -111,20 +122,19 @@ class HomeFragment : Fragment() {
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     if (doubleBackToExitPressedOnce) {
-                        // Si se presionó dos veces, se sale de la aplicación
                         requireActivity().finish()
                         return
                     }
 
                     doubleBackToExitPressedOnce = true
-                    Snackbar.make(requireView(), "Presione de nuevo para salir", Snackbar.LENGTH_LONG)
-                        .show()
-                    // Se establece el tiempo de espera para el segundo botón de retroceso
+                    Snackbar.make(requireView(), "Presione de nuevo para salir", Snackbar.LENGTH_LONG).show()
+
                     Handler(Looper.getMainLooper()).postDelayed({
                         doubleBackToExitPressedOnce = false
-                    }, 2000) // 2 segundos
+                    }, 2000)
                 }
-            })
+            }
+        )
     }
 
     override fun onDestroyView() {
