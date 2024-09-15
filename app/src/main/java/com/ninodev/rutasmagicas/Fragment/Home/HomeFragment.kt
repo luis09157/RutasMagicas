@@ -18,7 +18,6 @@ import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.LoginFragment
 import com.ninodev.rutasmagicas.Model.EstadoModel
-import com.ninodev.rutasmagicas.R
 import com.ninodev.rutasmagicas.databinding.FragmentHomeBinding
 import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
 
