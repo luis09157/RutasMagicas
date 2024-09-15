@@ -65,7 +65,7 @@ class HomeFragment : Fragment() {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
                     HelperUser._ID_USER = userId
-                    Snackbar.make(requireView(), "Usuario ID: $userId", Snackbar.LENGTH_LONG).show()
+                   // Snackbar.make(requireView(), "Usuario ID: $userId", Snackbar.LENGTH_LONG).show()
                 } else {
                     Snackbar.make(requireView(), "El ID de usuario es nulo o vacío", Snackbar.LENGTH_LONG).show()
                 }

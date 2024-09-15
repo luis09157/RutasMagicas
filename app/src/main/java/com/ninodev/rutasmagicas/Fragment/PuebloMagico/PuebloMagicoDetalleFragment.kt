@@ -66,7 +66,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
                     HelperUser._ID_USER = userId
-                    Snackbar.make(requireView(), userId, Snackbar.LENGTH_LONG).show()
+                    //Snackbar.make(requireView(), userId, Snackbar.LENGTH_LONG).show()
 
                     leerVisitas(PueblosMagicosFragment._ESTADO.nombreEstado, _PUEBLO_MAGICO.nombrePueblo)
                 } else {
@@ -117,7 +117,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
     }
     fun initClima() {
         climaService = ClimaService() // Use the property if it's not already initialized
-        climaService.getLatestWeather("${_PUEBLO_MAGICO.nombrePueblo}, ${PueblosMagicosFragment._ESTADO.nombreEstado}, Mexico", "cthKbWdY4MQgKJZxqn0AcasAF8yqXAng") { temperature, condition ->
+        climaService.getLatestWeather(_PUEBLO_MAGICO.latitud.toDouble(), _PUEBLO_MAGICO.latitud.toDouble(), "cthKbWdY4MQgKJZxqn0AcasAF8yqXAng") { temperature, condition ->
             println("Temperatura: $temperature°C")
             println("Condición: ${condition?.description ?: "No disponible"}")
             _CLIMA.Temperatura = "$temperature°C"

@@ -1,4 +1,3 @@
-// ClimaService.kt
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.ninodev.rutasmagicas.Model.WeatherResponse
@@ -6,6 +5,8 @@ import okhttp3.*
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import android.os.Handler
+import android.os.Looper
 
 private const val BASE_URL = "https://api.tomorrow.io/v4/weather/forecast"
 
@@ -33,9 +34,9 @@ class ClimaService {
         }
     }
 
-    // Método para obtener la temperatura y la condición climática más cercana
-    fun getLatestWeather(location: String, apiKey: String, callback: (Double?, WeatherCondition?) -> Unit) {
-        val url = "$BASE_URL?location=$location&apikey=$apiKey"
+    // Método para obtener la temperatura y la condición climática más cercana basado en latitud y longitud
+    fun getLatestWeather(latitud: Double, longitud: Double, apiKey: String, callback: (Double?, WeatherCondition?) -> Unit) {
+        val url = "$BASE_URL?location=$latitud,$longitud&apikey=$apiKey"
 
         val request = Request.Builder()
             .url(url)
@@ -47,11 +48,17 @@ class ClimaService {
             }
 
             override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    val jsonData = response.body?.string()
+                val jsonData = response.body?.string()
+
+                if (jsonData != null && response.isSuccessful) {
                     val weatherResponse = parseWeatherResponse(jsonData)
                     val (temperature, weatherCondition) = getClosestWeather(weatherResponse)
-                    callback(temperature, weatherCondition)
+
+                    // Asegurarse de que el callback se ejecute en el hilo principal (main thread)
+                    val handler = Handler(Looper.getMainLooper())
+                    handler.post {
+                        callback(temperature, weatherCondition)
+                    }
                 } else {
                     callback(null, null)
                 }
@@ -69,7 +76,7 @@ class ClimaService {
     // Función para obtener la temperatura y la condición más cercana en el tiempo
     private fun getClosestWeather(response: WeatherResponse): Pair<Double?, WeatherCondition?> {
         // Obtener la hora actual en formato ISO 8601
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
         dateFormat.timeZone = TimeZone.getTimeZone("UTC")
         val currentTime = dateFormat.parse(dateFormat.format(Date()))
 
