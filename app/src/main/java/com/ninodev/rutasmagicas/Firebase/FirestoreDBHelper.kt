@@ -1,4 +1,4 @@
-package com.ninodev.rutasmagicas.ui
+package com.ninodev.rutasmagicas.Firebase
 
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore

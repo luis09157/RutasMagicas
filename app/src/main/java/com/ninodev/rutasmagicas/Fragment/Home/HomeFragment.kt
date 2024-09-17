@@ -19,7 +19,7 @@ import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.LoginFragment
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.databinding.FragmentHomeBinding
-import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
+import com.ninodev.rutasmagicas.Firebase.FirestoreDBHelper
 
 class HomeFragment : Fragment() {
     private val TAG = "HomeFragment"

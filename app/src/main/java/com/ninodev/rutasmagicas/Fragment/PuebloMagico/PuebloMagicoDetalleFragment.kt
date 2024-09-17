@@ -1,6 +1,8 @@
 package com.ninodev.rutasmagicas.Fragment.PuebloMagico
 
 import ClimaService
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +13,6 @@ import com.airbnb.lottie.LottieAnimationView
 import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.firestore.FirebaseFirestore
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
@@ -20,7 +21,7 @@ import com.ninodev.rutasmagicas.Model.ClimaModel
 import com.ninodev.rutasmagicas.Model.PuebloMagicoModel
 import com.ninodev.rutasmagicas.R
 import com.ninodev.rutasmagicas.databinding.FragmentPuebloMagicoDetalleBinding
-import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
+import com.ninodev.rutasmagicas.Firebase.FirestoreDBHelper
 
 class PuebloMagicoDetalleFragment : Fragment() {
     private val TAG = "PuebloMagicoDetalleFragment"
@@ -81,6 +82,24 @@ class PuebloMagicoDetalleFragment : Fragment() {
     }
 
     fun listeners() {
+        binding.btnUbicacion.setOnClickListener {
+            val latitud = _PUEBLO_MAGICO.latitud
+            val longitud = _PUEBLO_MAGICO.longitud
+
+            // Crear la URI para abrir la ubicación directamente en Google Maps
+            val gmmIntentUri = Uri.parse("geo:$latitud,$longitud?q=$latitud,$longitud")
+            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+
+            // Verifica si hay alguna aplicación que pueda manejar el Intent
+            if (mapIntent.resolveActivity(requireActivity().packageManager) != null) {
+                startActivity(mapIntent)
+            } else {
+                // Si no hay Google Maps instalado, opcionalmente, abre en un navegador
+                val url = "https://www.google.com/maps?q=$latitud,$longitud"
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                startActivity(browserIntent)
+            }
+        }
         binding.btnPuebloSeleccionado.setOnClickListener {
             val currentVisita = _PUEBLO_MAGICO.visita // Asumiendo que tienes un campo en _PUEBLO_MAGICO para la visita
 
@@ -118,15 +137,15 @@ class PuebloMagicoDetalleFragment : Fragment() {
     fun initClima() {
         climaService = ClimaService() // Use the property if it's not already initialized
         climaService.getLatestWeather(_PUEBLO_MAGICO.latitud.toDouble(), _PUEBLO_MAGICO.latitud.toDouble(), "cthKbWdY4MQgKJZxqn0AcasAF8yqXAng") { temperature, condition ->
-            println("Temperatura: $temperature°C")
-            println("Condición: ${condition?.description ?: "No disponible"}")
-            _CLIMA.Temperatura = "$temperature°C"
+
+            _CLIMA.Temperatura = "$temperature °C"
             _CLIMA.Condicion = "${condition?.description ?: "No disponible"}"
 
             // Verificar si _binding no es null antes de acceder a sus propiedades
             activity?.runOnUiThread {
                 _binding?.let { binding ->
-                    binding.txtClima.text = _CLIMA.Condicion
+                    binding.txtClimaCondicion.text = _CLIMA.Condicion
+                    binding.txtClimaTemperatura.text = _CLIMA.Temperatura
                     when (condition) {
                         ClimaService.WeatherCondition.CLEAR -> animacionClima.setAnimation(R.raw.animacion_soleado)
                         ClimaService.WeatherCondition.CLOUDY -> animacionClima.setAnimation(R.raw.animacion_nublado)
@@ -149,7 +168,8 @@ class PuebloMagicoDetalleFragment : Fragment() {
             .error(R.drawable.estado_nuevo_leon) // Imagen de error en caso de fallo
             .into(binding.imagenMunicipio)
 
-        binding.txtTitulo.text = _PUEBLO_MAGICO.nombrePueblo
+        binding.txtEstado.text = PueblosMagicosFragment._ESTADO.nombreEstado
+        binding.txtPuebloMagico.text = "${_PUEBLO_MAGICO.nombrePueblo}"
         binding.txtDescripcion.text = _PUEBLO_MAGICO.descripcion
     }
 

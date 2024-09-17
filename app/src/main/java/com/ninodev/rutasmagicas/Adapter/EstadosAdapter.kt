@@ -12,7 +12,7 @@ import com.bumptech.glide.Glide
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.R
-import com.ninodev.rutasmagicas.ui.FirestoreDBHelper
+import com.ninodev.rutasmagicas.Firebase.FirestoreDBHelper
 
 class EstadosAdapter(
     private val context: Context,
