@@ -47,6 +47,7 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        showLoading()
         estadosList = mutableListOf()
         estadosAdapter = EstadosAdapter(requireContext(), estadosList)
         _binding?.listaEstados?.adapter = estadosAdapter
@@ -56,15 +57,23 @@ class HomeFragment : Fragment() {
         listeners()
         handleBackPress()
     }
-
     private fun init() {
         try {
+            firestoreDBHelper = FirestoreDBHelper()
             TOTAL_PUEBLOS_MAGICOS = 0
             if (HelperUser.isUserLoggedIn()) {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
                     HelperUser._ID_USER = userId
-                   // Snackbar.make(requireView(), "Usuario ID: $userId", Snackbar.LENGTH_LONG).show()
+                    firestoreDBHelper.getNombreUsuario( HelperUser._ID_USER,
+                        onSuccess = { nombreUsuario ->
+                            Log.d("NombreUsuario", "El nombre del usuario es: $nombreUsuario")
+                            binding.txtNombreUsuario.text = "Hola ${nombreUsuario},\n ¿Que ruta quieres realizar hoy?"
+                        },
+                        onFailure = { exception ->
+                            Log.e("ErrorNombreUsuario", "Error: ${exception.message}")
+                        }
+                    )
                 } else {
                     Snackbar.make(requireView(), "El ID de usuario es nulo o vacío", Snackbar.LENGTH_LONG).show()
                 }
@@ -76,12 +85,15 @@ class HomeFragment : Fragment() {
             Snackbar.make(requireView(), "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
         }
     }
-
     private fun listeners() {
         _binding?.listaEstados?.setOnItemClickListener { _, _, i, _ ->
-            PueblosMagicosFragment._ESTADO = estadosList[i]
+            val adapter = _binding?.listaEstados?.adapter // Obtén el adapter asociado al ListView
+            val estadoSeleccionado = adapter?.getItem(i) as EstadoModel // Obtén el item directamente del adapter
+            PueblosMagicosFragment._ESTADO = estadoSeleccionado
             UtilFragment.changeFragment(requireContext(), PueblosMagicosFragment(), TAG)
         }
+
+
 
         // Configurar el SearchView para búsqueda
         val searchView = _binding?.searchView
@@ -97,10 +109,7 @@ class HomeFragment : Fragment() {
             }
         })
     }
-
     private fun initData() {
-        firestoreDBHelper = FirestoreDBHelper()
-
         firestoreDBHelper.getEstados(
             onSuccess = { estados ->
                 estadosList.clear()
@@ -113,7 +122,6 @@ class HomeFragment : Fragment() {
             }
         )
     }
-
     private fun fetchUserVisits() {
         val userId = HelperUser.getUserId()
         if (!userId.isNullOrEmpty()) {
@@ -122,6 +130,7 @@ class HomeFragment : Fragment() {
                 onComplete = { totalVisits ->
                     TOTAL_PUEBLOS_VISITAS = totalVisits
                     _binding?.txtVisitadosPueblos?.text = "($totalVisits/$TOTAL_PUEBLOS_MAGICOS)"
+                    hideLoading()
                     promedioVisitas()
                 },
                 onFailure = { error ->
@@ -130,7 +139,6 @@ class HomeFragment : Fragment() {
             )
         }
     }
-
     private fun handleBackPress() {
         var doubleBackToExitPressedOnce = false
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -152,7 +160,6 @@ class HomeFragment : Fragment() {
             }
         )
     }
-
     private fun promedioVisitas() {
         if (TOTAL_PUEBLOS_MAGICOS == 0) {
             _binding?.txtVisitadosPueblos?.text = "(0/$TOTAL_PUEBLOS_MAGICOS)"
@@ -173,7 +180,6 @@ class HomeFragment : Fragment() {
             start()
         }
     }
-
     private fun filterList(query: String) {
         val filtered = estadosList.filter { estado ->
             estado.nombreEstado.contains(query, ignoreCase = true)
@@ -189,9 +195,16 @@ class HomeFragment : Fragment() {
             _binding?.listaEstados?.visibility = View.VISIBLE
         }
     }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    private fun showLoading() {
+        binding.lottieLoading.visibility = View.VISIBLE
+        binding.contenedor.visibility = View.GONE
+    }
+    private fun hideLoading() {
+        binding.lottieLoading.visibility = View.GONE
+        binding.contenedor.visibility = View.VISIBLE
     }
 }

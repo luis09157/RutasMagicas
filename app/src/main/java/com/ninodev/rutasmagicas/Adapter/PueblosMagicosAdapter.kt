@@ -54,8 +54,8 @@ class PueblosMagicosAdapter(
         // Usar Glide para cargar la imagen desde la URL
         Glide.with(context)
             .load(item.imagen)
-            .placeholder(R.drawable.ic_launcher_background) // Imagen de marcador de posición
-            .error(R.drawable.estado_nuevo_leon) // Imagen de error en caso de fallo
+            .placeholder(R.drawable.img_carga_viaje) // Imagen de marcador de posición
+            .error(R.drawable.img_not_found) // Imagen de error en caso de fallo
             .into(holder.imageView!!)
 
         return view

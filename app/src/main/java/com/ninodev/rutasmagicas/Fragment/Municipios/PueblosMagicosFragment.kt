@@ -34,12 +34,12 @@ class PueblosMagicosFragment : Fragment() {
 
         requireActivity().title = getString(R.string.menu_home)
 
+        showLoading()
         initData()
         listeners()
 
         return root
     }
-
     private fun initData() {
         _binding?.let { binding ->
             Glide.with(requireContext())
@@ -53,9 +53,9 @@ class PueblosMagicosFragment : Fragment() {
 
             val adapter = PueblosMagicosAdapter(requireContext(), _ESTADO.municipios)
             binding.gridPueblosMagicos.adapter = adapter
+            hideLoading()
         }
     }
-
     private fun listeners() {
         _binding?.let { binding ->
             binding.gridPueblosMagicos.setOnItemClickListener { _, _, i, _ ->
@@ -74,7 +74,6 @@ class PueblosMagicosFragment : Fragment() {
             }
         }
     }
-
     override fun onResume() {
         super.onResume()
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -86,9 +85,16 @@ class PueblosMagicosFragment : Fragment() {
             }
         )
     }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    private fun showLoading() {
+        binding.lottieLoading.visibility = View.VISIBLE
+        binding.contenedor.visibility = View.GONE
+    }
+    private fun hideLoading() {
+        binding.lottieLoading.visibility = View.GONE
+        binding.contenedor.visibility = View.VISIBLE
     }
 }

@@ -47,9 +47,9 @@ class PuebloMagicoDetalleFragment : Fragment() {
         val root: View = binding.root
 
         requireActivity().title = getString(R.string.menu_home)
-
-        initData()
+        showLoading()
         initClima()
+        initData()
         listeners()
 
         return root
@@ -60,7 +60,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
         animacionClima = binding.animacionClima
         init()
     }
-
     fun init() {
         try {
             if (HelperUser.isUserLoggedIn()) {
@@ -80,7 +79,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             Snackbar.make(requireView(), "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
         }
     }
-
     fun listeners() {
         binding.btnUbicacion.setOnClickListener {
             val latitud = _PUEBLO_MAGICO.latitud
@@ -154,25 +152,22 @@ class PuebloMagicoDetalleFragment : Fragment() {
                         else -> animacionClima.setAnimation(R.raw.animacion_soleado)
                     }
                     animacionClima.playAnimation() // Iniciar la animación
+                    hideLoading()
                 }
             }
         }
     }
-
-
-
     fun initData() {
         Glide.with(requireContext())
             .load(_PUEBLO_MAGICO.imagen)
-            .placeholder(R.drawable.ic_launcher_background) // Imagen de marcador de posición
-            .error(R.drawable.estado_nuevo_leon) // Imagen de error en caso de fallo
+            .placeholder(R.drawable.img_carga_viaje) // Imagen de marcador de posición
+            .error(R.drawable.img_not_found) // Imagen de error en caso de fallo
             .into(binding.imagenMunicipio)
 
         binding.txtEstado.text = PueblosMagicosFragment._ESTADO.nombreEstado
         binding.txtPuebloMagico.text = "${_PUEBLO_MAGICO.nombrePueblo}"
         binding.txtDescripcion.text = _PUEBLO_MAGICO.descripcion
     }
-
     override fun onResume() {
         super.onResume()
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -183,12 +178,10 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 }
             })
     }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
-
     fun toggleVisita() {
         firestoreHelper.toggleVisita(
             userId = HelperUser._ID_USER,
@@ -209,7 +202,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         )
     }
-
     fun leerVisitas(nombreEstado: String, nombreMunicipio: String) {
         firestoreHelper.leerVisitas(
             idUsuario = HelperUser._ID_USER,
@@ -232,5 +224,12 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         )
     }
-
+    private fun showLoading() {
+        binding.lottieLoading.visibility = View.VISIBLE
+        binding.contenedor.visibility = View.GONE
+    }
+    private fun hideLoading() {
+        binding.lottieLoading.visibility = View.GONE
+        binding.contenedor.visibility = View.VISIBLE
+    }
 }

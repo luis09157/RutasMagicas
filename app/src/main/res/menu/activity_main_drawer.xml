@@ -9,6 +9,10 @@
             android:icon="@drawable/ic_home"
             android:title="@string/menu_home" />
         <item
+            android:id="@+id/nav_mi_perfil"
+            android:icon="@drawable/ic_perfil"
+            android:title="@string/menu_mi_perfil" />
+        <item
             android:id="@+id/nav_logout"
             android:icon="@drawable/ic_logout_2"
             android:title="@string/menu_logout" />

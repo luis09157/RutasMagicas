@@ -17,7 +17,6 @@ class FirestoreDBHelper {
     ) {
         fetchEstadosFromFirestore(onSuccess, onFailure)
     }
-
     private fun fetchEstadosFromFirestore(
         onSuccess: (MutableList<EstadoModel>) -> Unit,
         onFailure: (Exception) -> Unit
@@ -48,7 +47,6 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
-
     private fun parseEstado(estadoId: String, data: Map<String, Any>, onComplete: () -> Unit): EstadoModel {
         val nombreEstado = data["nombreEstado"] as? String ?: ""
         val imagen = data["imagen"] as? String ?: ""
@@ -86,7 +84,6 @@ class FirestoreDBHelper {
 
         return estadoModel
     }
-
     private fun parseMunicipio(data: Map<String, Any>): MunicipioModel {
         val nombreMunicipio = data["nombreMunicipio"] as? String ?: ""
         val municipioImagen = data["imagen"] as? String ?: ""
@@ -103,7 +100,6 @@ class FirestoreDBHelper {
             longitud = longitud
         )
     }
-
     fun getAllDataFromUser(
         userId: String,
         onComplete: (Int) -> Unit,
@@ -145,8 +141,6 @@ class FirestoreDBHelper {
                 onFailure(e)
             }
     }
-
-
     fun toggleVisita(
         userId: String,
         estado: String,
@@ -210,8 +204,6 @@ class FirestoreDBHelper {
                 onFailure(exception) // Notificar el fallo
             }
     }
-
-
     fun leerVisitas(
         idUsuario: String,
         nombreEstado: String,
@@ -259,7 +251,6 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
-
     fun contarPueblosVisitadosEnEstado(
         idUsuario: String,
         nombreEstado: String,
@@ -304,8 +295,40 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
+    fun getNombreUsuario(
+        idUsuario: String,
+        onSuccess: (String) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        // Referencia a la colección de usuarios
+        val userDocRef = firestore.collection("RutasMagicas")
+            .document("RegistroUsuarios")
+            .collection("Usuarios")
+            .document(idUsuario)
 
-
-
+        // Obtener el documento del usuario
+        userDocRef.get()
+            .addOnSuccessListener { documentSnapshot ->
+                if (documentSnapshot.exists()) {
+                    // Obtener el campo "nombreUsuario"
+                    val nombreUsuario = documentSnapshot.getString("nombreUsuario")
+                    if (nombreUsuario != null) {
+                        // Notificar éxito pasando el nombre del usuario
+                        onSuccess(nombreUsuario)
+                    } else {
+                        // Si el campo no existe, lanzar una excepción controlada
+                        onFailure(Exception("El campo 'nombreUsuario' no se encuentra en el documento"))
+                    }
+                } else {
+                    // Si el documento no existe, lanzar una excepción
+                    onFailure(Exception("El usuario con ID $idUsuario no existe"))
+                }
+            }
+            .addOnFailureListener { exception ->
+                // Manejar cualquier error que ocurra durante la obtención del documento
+                Log.e("FirestoreDBHelper", "Error obteniendo nombreUsuario: ${exception.message}")
+                onFailure(exception)
+            }
+    }
 
 }
