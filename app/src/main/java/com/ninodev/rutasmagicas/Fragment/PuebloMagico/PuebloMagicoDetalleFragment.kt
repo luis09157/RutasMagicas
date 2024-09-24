@@ -1,18 +1,26 @@
 package com.ninodev.rutasmagicas.Fragment.PuebloMagico
 
 import ClimaService
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.core.app.ActivityCompat
+import androidx.core.text.HtmlCompat
 import androidx.fragment.app.Fragment
 import com.airbnb.lottie.LottieAnimationView
 import com.bumptech.glide.Glide
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.ninodev.rutasmagicas.Config.AppConfig
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
@@ -30,6 +38,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
     val firestoreHelper = FirestoreDBHelper()
 
     private lateinit var climaService: ClimaService
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private val binding get() = _binding!!
 
@@ -47,6 +56,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
         val root: View = binding.root
 
         requireActivity().title = getString(R.string.menu_home)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         showLoading()
         initClima()
         initData()
@@ -80,6 +90,9 @@ class PuebloMagicoDetalleFragment : Fragment() {
         }
     }
     fun listeners() {
+        binding.btnPuebloCertificado.setOnClickListener {
+            checkLocationAndCalculateDistance()
+        }
         binding.btnUbicacion.setOnClickListener {
             val latitud = _PUEBLO_MAGICO.latitud
             val longitud = _PUEBLO_MAGICO.longitud
@@ -166,7 +179,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
 
         binding.txtEstado.text = PueblosMagicosFragment._ESTADO.nombreEstado
         binding.txtPuebloMagico.text = "${_PUEBLO_MAGICO.nombrePueblo}"
-        binding.txtDescripcion.text = _PUEBLO_MAGICO.descripcion
+        binding.txtDescripcion.text = HtmlCompat.fromHtml(_PUEBLO_MAGICO.descripcion, HtmlCompat.FROM_HTML_MODE_LEGACY)
     }
     override fun onResume() {
         super.onResume()
@@ -231,5 +244,77 @@ class PuebloMagicoDetalleFragment : Fragment() {
     private fun hideLoading() {
         binding.lottieLoading.visibility = View.GONE
         binding.contenedor.visibility = View.VISIBLE
+    }
+    private fun checkLocationAndCalculateDistance() {
+        // Verifica si se tienen permisos de ubicación
+        if (ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Obtén la ubicación actual
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    if (location != null) {
+                        // Calcula la distancia entre el pueblo mágico y la ubicación actual
+                        val puebloLocation = Location("PuebloMagico")
+                        //puebloLocation.latitude = _PUEBLO_MAGICO.latitud.toDouble()
+                        puebloLocation.latitude = "25.7326905".toDouble()
+                       // puebloLocation.longitude = _PUEBLO_MAGICO.longitud.toDouble()
+                        puebloLocation.longitude = "-100.1844694".toDouble()
+
+                        val distanciaEnMetros = location.distanceTo(puebloLocation)
+
+                        // Verifica si la distancia es menor a 10 metros
+                        if (distanciaEnMetros <= 20) {
+                            Snackbar.make(
+                                requireView(),
+                                "Estás dentro del rango de 10 metros del pueblo mágico.",
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                        } else {
+                            Snackbar.make(
+                                requireView(),
+                                "Estás fuera del rango de 10 metros.",
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                        }
+                    } else {
+                        Snackbar.make(
+                            requireView(),
+                            "No se pudo obtener la ubicación actual.",
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
+                }
+        } else {
+            // Si no se tienen permisos, solicitarlos
+            requestLocationPermission()
+        }
+    }
+
+    private fun requestLocationPermission() {
+        requestPermissions(
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+            AppConfig.CODE_UBICACION
+        )
+    }
+
+    // Manejo del resultado de la solicitud de permisos
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == AppConfig.CODE_UBICACION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                checkLocationAndCalculateDistance()
+            } else {
+                Snackbar.make(
+                    requireView(),
+                    "Permiso de ubicación denegado.",
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 }
