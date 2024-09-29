@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.play.services.location)
+    implementation(libs.androidx.activity)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -70,4 +71,6 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.airbnb.android:lottie:6.0.0")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("org.jsoup:jsoup:1.16.1")
+
 }

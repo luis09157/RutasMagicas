@@ -83,7 +83,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
                     Snackbar.make(requireView(), "User ID is null or empty", Snackbar.LENGTH_LONG).show()
                 }
             } else {
-                UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
+                UtilFragment.changeFragment(requireActivity().supportFragmentManager, LoginFragment(), TAG)
             }
         } catch (e: Exception) {
             Snackbar.make(requireView(), "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
@@ -187,7 +187,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    UtilFragment.changeFragment(requireContext(), PueblosMagicosFragment(), TAG)
+                    UtilFragment.changeFragment(requireActivity().supportFragmentManager, PueblosMagicosFragment(), TAG)
                 }
             })
     }

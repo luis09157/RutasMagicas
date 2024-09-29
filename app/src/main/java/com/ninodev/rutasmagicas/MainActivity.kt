@@ -10,9 +10,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.common.api.ApiException
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
@@ -23,7 +21,6 @@ import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.Helper.UtilHelper
 import com.ninodev.rutasmagicas.databinding.ActivityMainBinding
 import android.Manifest
-import kotlin.math.log
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,9 +45,12 @@ class MainActivity : AppCompatActivity() {
 
         // Verificar si el usuario ya está autenticado
         if (auth.currentUser != null) {
-            UtilFragment.changeFragment(this, HomeFragment(), TAG)
+            UtilFragment.changeFragment(supportFragmentManager, HomeFragment(), TAG)
         } else {
-            UtilFragment.changeFragment(this, LoginFragment(), TAG)
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
         }
 
         // Configurar el botón para abrir y cerrar el drawer
@@ -60,14 +60,17 @@ class MainActivity : AppCompatActivity() {
         binding.navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_home -> {
-                    UtilFragment.changeFragment(this, HomeFragment(), TAG)
+                    UtilFragment.changeFragment(supportFragmentManager, HomeFragment(), TAG)
                     binding.drawerLayout.closeDrawer(GravityCompat.START)
                     true
                 }
                 R.id.nav_logout -> {
                     logout()
-                    UtilFragment.changeFragment(this, LoginFragment(), TAG)
                     binding.drawerLayout.closeDrawer(GravityCompat.START)
+                    val intent = Intent(this, LoginActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    finish()
                     true
                 }
                 else -> false
@@ -85,8 +88,11 @@ class MainActivity : AppCompatActivity() {
         GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
             .addOnCompleteListener {
                 // Redirige al fragmento de inicio de sesión
-                UtilFragment.changeFragment(this, LoginFragment(), TAG)
                 Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
             }
     }
 
@@ -146,7 +152,7 @@ class MainActivity : AppCompatActivity() {
                     .addOnCompleteListener(this) { task ->
                         if (task.isSuccessful) {
                             // Inicio de sesión exitoso
-                            UtilFragment.changeFragment(this, HomeFragment(), TAG)
+                            UtilFragment.changeFragment(supportFragmentManager, HomeFragment(), TAG)
                         } else {
                             // Si el inicio de sesión falla, muestra un mensaje al usuario.
                             Log.w(TAG, "signInWithCredential:failure", task.exception)

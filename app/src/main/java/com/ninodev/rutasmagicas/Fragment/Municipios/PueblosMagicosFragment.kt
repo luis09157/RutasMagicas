@@ -69,7 +69,7 @@ class PueblosMagicosFragment : Fragment() {
                         longitud = municipio.longitud
                     }
 
-                    UtilFragment.changeFragment(requireContext(), PuebloMagicoDetalleFragment(), TAG)
+                    UtilFragment.changeFragment(requireActivity().supportFragmentManager, PuebloMagicoDetalleFragment(), TAG)
                 }
             }
         }
@@ -80,7 +80,7 @@ class PueblosMagicosFragment : Fragment() {
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    UtilFragment.changeFragment(requireContext(), HomeFragment(), TAG)
+                    UtilFragment.changeFragment(requireActivity().supportFragmentManager, HomeFragment(), TAG)
                 }
             }
         )

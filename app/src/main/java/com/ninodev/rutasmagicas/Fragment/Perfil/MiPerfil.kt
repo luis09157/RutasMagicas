@@ -43,7 +43,7 @@ class MiPerfil : Fragment() {
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    UtilFragment.changeFragment(requireContext(), PueblosMagicosFragment(), TAG)
+                    UtilFragment.changeFragment(requireActivity().supportFragmentManager, PueblosMagicosFragment(), TAG)
                 }
             })
     }

@@ -1,6 +1,7 @@
 package com.ninodev.rutasmagicas
 
 import RegistroFragment
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +14,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import com.google.android.datatransport.BuildConfig
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -20,10 +22,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.ninodev.rutasmagicas.Config.AppConfig
-import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.Helper.UtilHelper
+import com.ninodev.rutasmagicas.Service.VersionPlayStore
 import com.ninodev.rutasmagicas.databinding.FragmentLoginBinding
 
 class LoginFragment : Fragment() {
@@ -31,6 +33,8 @@ class LoginFragment : Fragment() {
     private var _binding: FragmentLoginBinding? = null
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var versionPlayStore: VersionPlayStore
+    private val currentVersion = BuildConfig.VERSION_NAME
 
     private val binding get() = _binding!!
 
@@ -52,17 +56,24 @@ class LoginFragment : Fragment() {
         init()
         listeners()
 
+
+
         return root
     }
 
     private fun init() {
         try {
             hideLoading()
+            versionPlayStore = VersionPlayStore()
             if (HelperUser.isUserLoggedIn()) {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
                     HelperUser._ID_USER = userId
-                    UtilFragment.changeFragment(requireContext(), HomeFragment(), TAG)
+
+                    val intent = Intent(requireContext(), MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    requireActivity().finish()
                 }
             }
             // Configura Google Sign-In
@@ -87,7 +98,7 @@ class LoginFragment : Fragment() {
         }
         binding.btnRegistro.setOnClickListener {
             _FLAG_IS_REGISTRO  = false
-            UtilFragment.changeFragment(requireContext(), RegistroFragment(), TAG)
+            UtilFragment.changeFragment(requireActivity().supportFragmentManager, RegistroFragment(), TAG)
         }
         binding.btnLogin.setOnClickListener {
             UtilHelper.hideKeyboard(requireView())
@@ -124,7 +135,10 @@ class LoginFragment : Fragment() {
                 UtilHelper.hideKeyboard(requireView())
                 hideLoading()
                 if (task.isSuccessful) {
-                    UtilFragment.changeFragment(requireContext(), HomeFragment(), TAG)
+                    val intent = Intent(requireContext(), MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    requireActivity().finish()
                 } else {
                     UtilHelper.showAlert(requireContext(), getString(R.string.msg_login_failed))
                 }
@@ -189,7 +203,7 @@ class LoginFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-
+        checkVersionAndLogin()
         if(_FLAG_IS_REGISTRO){
             _FLAG_IS_REGISTRO = false
             Snackbar.make(requireView(), getString(R.string.thank_you_for_registering), Snackbar.LENGTH_LONG)
@@ -215,6 +229,24 @@ class LoginFragment : Fragment() {
                     }, 2000)
                 }
             })
+    }
+
+    private fun checkVersionAndLogin() {
+        versionPlayStore.getLatestVersionFromPlayStore(requireActivity().packageName) { latestVersion ->
+            requireActivity().runOnUiThread {
+                if (latestVersion != null) {
+                    if (latestVersion != currentVersion) {
+                        // Mostrar mensaje si la versión no está actualizada
+                        UtilHelper.showAlert(requireContext(), "Actualiza la aplicación para poder continuar.")
+                    } else {
+                        versionPlayStore.showUpdateDialog(requireActivity())
+                    }
+                } else {
+                    // Mostrar error si no se pudo obtener la versión
+                    UtilHelper.showAlert(requireContext(), "No se pudo verificar la versión de la app.")
+                }
+            }
+        }
     }
 
     override fun onDestroyView() {

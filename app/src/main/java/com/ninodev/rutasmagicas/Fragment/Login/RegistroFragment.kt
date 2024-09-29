@@ -4,15 +4,12 @@ import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.LoginFragment
 import com.ninodev.rutasmagicas.Model.User
@@ -194,7 +191,7 @@ class RegistroFragment : Fragment() {
                     if (task.isSuccessful) {
                         signOut()
                         LoginFragment._FLAG_IS_REGISTRO = true
-                        UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
+                        UtilFragment.changeFragment(requireActivity().supportFragmentManager, LoginFragment(), TAG)
                     } else {
                         hideLoading()
                         Snackbar.make(requireView(), getString(R.string.error_registration_failed), Snackbar.LENGTH_LONG).show()

@@ -78,7 +78,7 @@ class HomeFragment : Fragment() {
                     Snackbar.make(requireView(), "El ID de usuario es nulo o vacío", Snackbar.LENGTH_LONG).show()
                 }
             } else {
-                UtilFragment.changeFragment(requireContext(), LoginFragment(), TAG)
+                UtilFragment.changeFragment(requireActivity().supportFragmentManager, LoginFragment(), TAG)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error: ${e.message}", e)
@@ -90,7 +90,7 @@ class HomeFragment : Fragment() {
             val adapter = _binding?.listaEstados?.adapter // Obtén el adapter asociado al ListView
             val estadoSeleccionado = adapter?.getItem(i) as EstadoModel // Obtén el item directamente del adapter
             PueblosMagicosFragment._ESTADO = estadoSeleccionado
-            UtilFragment.changeFragment(requireContext(), PueblosMagicosFragment(), TAG)
+            UtilFragment.changeFragment(requireActivity().supportFragmentManager, PueblosMagicosFragment(), TAG)
         }
 
 
