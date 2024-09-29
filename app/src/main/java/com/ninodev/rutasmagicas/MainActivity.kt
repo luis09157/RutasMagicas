@@ -136,32 +136,4 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == AppConfig.GOOGLE_SIGN_IN) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            try {
-                val account = task.getResult(ApiException::class.java)!!
-                Log.d(TAG, "Google sign in successful: ${account.id}")
-
-                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
-                auth.signInWithCredential(credential)
-                    .addOnCompleteListener(this) { task ->
-                        if (task.isSuccessful) {
-                            // Inicio de sesión exitoso
-                            UtilFragment.changeFragment(supportFragmentManager, HomeFragment(), TAG)
-                        } else {
-                            // Si el inicio de sesión falla, muestra un mensaje al usuario.
-                            Log.w(TAG, "signInWithCredential:failure", task.exception)
-                            UtilHelper.showAlert(this, getString(R.string.msg_login_failed))
-                        }
-                    }
-            } catch (e: ApiException) {
-                Log.w(TAG, "Google sign in failed", e)
-            }
-        }
-    }
 }

@@ -147,7 +147,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
     }
     fun initClima() {
         climaService = ClimaService() // Use the property if it's not already initialized
-        climaService.getLatestWeather(_PUEBLO_MAGICO.latitud.toDouble(), _PUEBLO_MAGICO.latitud.toDouble(), "cthKbWdY4MQgKJZxqn0AcasAF8yqXAng") { temperature, condition ->
+        climaService.getLatestWeather(_PUEBLO_MAGICO.latitud.toDouble(), _PUEBLO_MAGICO.longitud.toDouble(), "cthKbWdY4MQgKJZxqn0AcasAF8yqXAng") { temperature, condition ->
 
             _CLIMA.Temperatura = "$temperature °C"
             _CLIMA.Condicion = "${condition?.description ?: "No disponible"}"
@@ -258,10 +258,8 @@ class PuebloMagicoDetalleFragment : Fragment() {
                     if (location != null) {
                         // Calcula la distancia entre el pueblo mágico y la ubicación actual
                         val puebloLocation = Location("PuebloMagico")
-                        //puebloLocation.latitude = _PUEBLO_MAGICO.latitud.toDouble()
-                        puebloLocation.latitude = "25.7326905".toDouble()
-                       // puebloLocation.longitude = _PUEBLO_MAGICO.longitud.toDouble()
-                        puebloLocation.longitude = "-100.1844694".toDouble()
+                        puebloLocation.latitude = _PUEBLO_MAGICO.latitud.toDouble()
+                        puebloLocation.longitude = _PUEBLO_MAGICO.longitud.toDouble()
 
                         val distanciaEnMetros = location.distanceTo(puebloLocation)
 
