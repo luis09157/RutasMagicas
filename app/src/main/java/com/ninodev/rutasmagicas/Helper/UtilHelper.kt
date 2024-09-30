@@ -1,9 +1,11 @@
 package com.ninodev.rutasmagicas.Helper
 
 import android.content.Context
+import android.provider.DocumentsContract.Root
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.ninodev.rutasmagicas.R
 
 class UtilHelper {
@@ -18,6 +20,11 @@ class UtilHelper {
                 .setPositiveButton(context.getString(R.string.btn_ok)) { dialog, _ ->
                     dialog.dismiss()
                 }
+                .show()
+        }
+        fun mostrarSnackbar(view: View, mensaje: String) {
+            Snackbar.make(view, mensaje, Snackbar.LENGTH_SHORT)
+                .setAction("Aceptar") { /* Acciones si se requiere */ }
                 .show()
         }
     }

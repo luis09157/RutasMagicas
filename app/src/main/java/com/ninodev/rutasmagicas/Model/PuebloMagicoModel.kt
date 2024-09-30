@@ -8,5 +8,6 @@ class PuebloMagicoModel (
     var descripcion: String = "",
     var latitud : String = "",
     var longitud : String = "",
-    var visita : Boolean = false
+    var visita : Boolean = false,
+    var visitaCertificada : Boolean = false
 )

@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,6 +31,7 @@ import com.ninodev.rutasmagicas.Model.PuebloMagicoModel
 import com.ninodev.rutasmagicas.R
 import com.ninodev.rutasmagicas.databinding.FragmentPuebloMagicoDetalleBinding
 import com.ninodev.rutasmagicas.Firebase.FirestoreDBHelper
+import com.ninodev.rutasmagicas.Helper.UtilHelper
 
 class PuebloMagicoDetalleFragment : Fragment() {
     private val TAG = "PuebloMagicoDetalleFragment"
@@ -91,7 +93,13 @@ class PuebloMagicoDetalleFragment : Fragment() {
     }
     fun listeners() {
         binding.btnPuebloCertificado.setOnClickListener {
-            checkLocationAndCalculateDistance()
+            if (_PUEBLO_MAGICO.visita) {
+                // Aquí el usuario ya ha indicado que ha visitado el pueblo
+                mostrarConfirmacionCertificacion()
+            } else {
+                // Aquí el usuario no ha indicado que ha visitado el pueblo
+                UtilHelper.mostrarSnackbar(requireView(),"Para certificar tu visita, primero debes indicar que has estado en este pueblo mágico.")
+            }
         }
         binding.btnUbicacion.setOnClickListener {
             val latitud = _PUEBLO_MAGICO.latitud
@@ -112,14 +120,12 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         }
         binding.btnPuebloSeleccionado.setOnClickListener {
-            val currentVisita = _PUEBLO_MAGICO.visita // Asumiendo que tienes un campo en _PUEBLO_MAGICO para la visita
-
             val title: String
             val message: String
             val positiveButtonText: String
 
             // Configurar el mensaje y los botones según el estado actual de la visita
-            if (currentVisita == true) {
+            if ( _PUEBLO_MAGICO.visita == true) {
                 title = "Quitar visita"
                 message = "¿Deseas quitar tu visita al pueblo mágico ${_PUEBLO_MAGICO.nombrePueblo}?"
                 positiveButtonText = "Quitar"
@@ -203,11 +209,9 @@ class PuebloMagicoDetalleFragment : Fragment() {
             puebloMagico = _PUEBLO_MAGICO,
             onSuccess = { newVisita ->
                 if (newVisita) {
-                    binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_verde)
-                    Snackbar.make(requireView(), "Has añadido tu visita", Snackbar.LENGTH_LONG).show()
+                    setBtnVisitaTrue()
                 } else {
-                    binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
-                    Snackbar.make(requireView(), "Has quitado tu visita", Snackbar.LENGTH_LONG).show()
+                    setBtnVisitaFalse()
                 }
             },
             onFailure = { exception ->
@@ -220,22 +224,54 @@ class PuebloMagicoDetalleFragment : Fragment() {
             idUsuario = HelperUser._ID_USER,
             nombreEstado = PueblosMagicosFragment._ESTADO.nombreEstado,
             nombreMunicipio = _PUEBLO_MAGICO.nombrePueblo,
-            onVisitFound = {
-                // Acción cuando la visita es encontrada
-                binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_verde)
-                Snackbar.make(requireView(), "Visita confirmada a $nombreMunicipio en $nombreEstado", Snackbar.LENGTH_LONG).show()
-                _PUEBLO_MAGICO.visita = true
+            onVisitFound = { visita, verificado ->
+                _PUEBLO_MAGICO.visita = visita
+                _PUEBLO_MAGICO.visitaCertificada = verificado
+                if (visita) {
+                    setBtnVisitaTrue()
+                    Log.d("Verificado", "Visita confirmada a $nombreMunicipio en $nombreEstado")
+                } else {
+                    setBtnVisitaFalse()
+                    Log.d("Verificado", "Visita no realizada a $nombreMunicipio en $nombreEstado")
+                }
+
+                if (verificado) {
+                    setBtnCertificadoTrue()
+                    Log.d("Verificado", "El pueblo mágico está verificado.")
+                } else {
+                    setBtnCertificadoFalse()
+                    Log.d("Verificado", "El pueblo mágico no está verificado.")
+                }
             },
             onVisitNotFound = {
                 // Acción cuando no se encuentra la visita
-                binding.btnPuebloSeleccionado.setImageResource(R.drawable.paloma_blanca)
+                binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visita_blanco)
+                binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_blanco)
                 _PUEBLO_MAGICO.visita = false
+                _PUEBLO_MAGICO.visitaCertificada = false
+                Snackbar.make(requireView(), "No se encontraron visitas a $nombreMunicipio en $nombreEstado", Snackbar.LENGTH_LONG).show()
             },
             onFailure = { exception ->
                 // Manejo de errores
-                Snackbar.make(requireView(), "Error al obtener los documentos: ${exception.message}", Snackbar.LENGTH_LONG).show()
+                UtilHelper.mostrarSnackbar(requireView(), "Error al obtener los documentos: ${exception.message}")
             }
         )
+    }
+    private fun setBtnVisitaTrue(){
+        binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visitado_azul)
+        binding.fondoPuebloVisitado.visibility = View.VISIBLE
+    }
+    private fun setBtnVisitaFalse(){
+        binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visita_blanco)
+        binding.fondoPuebloVisitado.visibility = View.GONE
+    }
+    private fun setBtnCertificadoTrue(){
+        binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_azul)
+        binding.fondoPuebloCertificado.visibility = View.VISIBLE
+    }
+    private fun setBtnCertificadoFalse(){
+        binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_blanco)
+        binding.fondoPuebloCertificado.visibility = View.GONE
     }
     private fun showLoading() {
         binding.lottieLoading.visibility = View.VISIBLE
@@ -289,6 +325,26 @@ class PuebloMagicoDetalleFragment : Fragment() {
             // Si no se tienen permisos, solicitarlos
             requestLocationPermission()
         }
+    }
+    private fun mostrarConfirmacionCertificacion() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Confirmación")
+            .setMessage("Ya has indicado que has visitado este pueblo mágico. ¿Deseas certificar tu visita?")
+            .setPositiveButton("Sí") { dialog, _ ->
+                checkLocationAndCalculateDistance()
+                toggleVisita()
+                certificarVisita()
+                dialog.dismiss()
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun certificarVisita() {
+        // Aquí pones la lógica para certificar la visita
+        UtilHelper.mostrarSnackbar(requireView(),"Tu visita ha sido certificada.")
     }
 
     private fun requestLocationPermission() {

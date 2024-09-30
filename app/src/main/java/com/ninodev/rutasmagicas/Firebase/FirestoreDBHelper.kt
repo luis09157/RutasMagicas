@@ -185,7 +185,8 @@ class FirestoreDBHelper {
                     val newVisitaData = mapOf(
                         "nombreEstado" to estado,
                         "nombreMunicipio" to municipio,
-                        "visita" to true // Establecer la visita como true por defecto
+                        "visita" to true,
+                        "verificado" to false
                     )
 
                     collectionRef.add(newVisitaData)
@@ -208,8 +209,8 @@ class FirestoreDBHelper {
         idUsuario: String,
         nombreEstado: String,
         nombreMunicipio: String,
-        onVisitFound: () -> Unit, // Callback si la visita es encontrada (visita == true)
-        onVisitNotFound: () -> Unit, // Callback si la visita no es encontrada (visita == false o no existe)
+        onVisitFound: (visita: Boolean, verificado: Boolean) -> Unit, // Callback para devolver ambos valores
+        onVisitNotFound: () -> Unit, // Callback si no hay visitas encontradas
         onFailure: (Exception) -> Unit // Callback para manejar errores
     ) {
         // Navegar en la estructura de Firestore
@@ -230,15 +231,12 @@ class FirestoreDBHelper {
                 if (!querySnapshot.isEmpty) {
                     // Recorre los resultados de la consulta
                     for (document in querySnapshot) {
-                        val visita = document.getBoolean("visita")
+                        // Obtener los valores de "visita" y "verificado", por defecto false si no están presentes
+                        val visita = document.getBoolean("visita") ?: false
+                        val verificado = document.getBoolean("verificado") ?: false
 
-                        if (visita == true) {
-                            // Si la visita es verdadera, ejecutar el callback
-                            onVisitFound()
-                        } else {
-                            // Si no se ha realizado la visita
-                            onVisitNotFound()
-                        }
+                        // Devolver ambos valores mediante el callback
+                        onVisitFound(visita, verificado)
                     }
                 } else {
                     // No se encontraron documentos, ejecutar callback de visita no encontrada
@@ -251,6 +249,7 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
+
     fun contarPueblosVisitadosEnEstado(
         idUsuario: String,
         nombreEstado: String,

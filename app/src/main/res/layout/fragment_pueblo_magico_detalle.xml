@@ -65,13 +65,6 @@
                         android:layout_weight="1"
                         android:src="@drawable/ubicacion" />
 
-                    <ImageView
-                        android:id="@+id/btn_pueblo_seleccionado"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_margin="10dp"
-                        android:layout_weight="1"
-                        android:src="@drawable/imagen_visitado_azul" />
 
                     <FrameLayout
                         android:layout_width="match_parent"
@@ -79,6 +72,29 @@
                         android:layout_margin="10dp"
                         android:layout_weight="1">
                         <FrameLayout
+                            android:id="@+id/fondo_pueblo_visitado"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginLeft="17dp"
+                            android:layout_marginRight="17dp"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginBottom="10dp"
+                            android:background="@color/white"/>
+                        <ImageView
+                            android:id="@+id/btn_pueblo_seleccionado"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/imagen_visitado_azul" />
+                    </FrameLayout>
+
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="10dp"
+                        android:layout_weight="1">
+                        <FrameLayout
+                            android:id="@+id/fondo_pueblo_certificado"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginLeft="17dp"
