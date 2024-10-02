@@ -122,22 +122,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         }
         binding.btnUbicacion.setOnClickListener {
-            val latitud = _PUEBLO_MAGICO.latitud
-            val longitud = _PUEBLO_MAGICO.longitud
-
-            // Crear la URI para abrir la ubicación directamente en Google Maps
-            val gmmIntentUri = Uri.parse("geo:$latitud,$longitud?q=$latitud,$longitud")
-            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-
-            // Verifica si hay alguna aplicación que pueda manejar el Intent
-            if (mapIntent.resolveActivity(requireActivity().packageManager) != null) {
-                startActivity(mapIntent)
-            } else {
-                // Si no hay Google Maps instalado, opcionalmente, abre en un navegador
-                val url = "https://www.google.com/maps?q=$latitud,$longitud"
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                startActivity(browserIntent)
-            }
+           goToUbicationGoogleMaps()
         }
         binding.btnPuebloSeleccionado.setOnClickListener {
             val title: String
@@ -326,7 +311,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             getLocationAndCalculateDistance()
         }
     }
-
     private fun mostrarInformarRechazoPermiso() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Permiso de Ubicación Denegado")
@@ -340,6 +324,21 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
             .setNegativeButton("Cancelar", null)
             .setIcon(R.drawable.ic_home) // Opcional: añade un ícono
+            .show()
+    }
+    private fun mostrarInformarRechazoPermisoCamara() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Permiso de Cámara Denegado")
+            .setMessage("Has denegado el acceso a la cámara varias veces. Para otorgar el permiso, ve a Configuración de la aplicación.")
+            .setPositiveButton("Configuración") { dialog, which ->
+                // Enviar al usuario a la configuración de la aplicación
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                val uri: Uri = Uri.fromParts("package", requireActivity().packageName, null)
+                intent.data = uri
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancelar", null)
+            .setIcon(R.drawable.ic_menu_camera) // Opcional: añade un ícono relacionado con la cámara
             .show()
     }
 
@@ -356,8 +355,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         }
     }
-
-
     private fun mostrarAlertActiveLocationConfig() {
         MaterialAlertDialogBuilder(requireActivity())
             .setTitle("Permiso de Ubicación Requerido")
@@ -370,7 +367,22 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 startActivity(intent)
             }
             .setNegativeButton("Cancelar", null)
-            .setIcon(R.drawable.ic_home) // Opcional: añade un ícono
+            .setIcon(R.drawable.ubicacion) // Opcional: añade un ícono
+            .show()
+    }
+    private fun mostrarAlertActiveCameraConfig() {
+        MaterialAlertDialogBuilder(requireActivity())
+            .setTitle("Permiso de Cámara Requerido")
+            .setMessage("Esta aplicación necesita acceso a tu cámara para tomar fotos. Ve a Configuración para habilitar el permiso.")
+            .setPositiveButton("Configuración") { dialog, which ->
+                // Enviar al usuario a la configuración de la aplicación
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                val uri: Uri = Uri.fromParts("package", requireActivity().packageName, null)
+                intent.data = uri
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancelar", null)
+            .setIcon(R.drawable.ic_menu_camera) // Opcional: añade un ícono relacionado con la cámara
             .show()
     }
 
@@ -388,49 +400,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 dialog.dismiss()
             }
             .show()
-    }
-    private fun certificarVisita() {
-        // Aquí pones la lógica para certificar la visita
-        UtilHelper.mostrarSnackbar(requireView(),"Tu visita ha sido certificada.")
-    }
-    private fun requestLocationPermission() {
-        if (ContextCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            // El permiso ya ha sido concedido
-            // Aquí puedes iniciar las tareas que requieren la ubicación
-        } else {
-            // Verifica si debemos mostrar una explicación sobre por qué se necesita el permiso
-            if (ActivityCompat.shouldShowRequestPermissionRationale(
-                    requireActivity(),
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                )
-            ) {
-                // Muestra una explicación al usuario y luego solicita el permiso nuevamente
-                MaterialAlertDialogBuilder(requireActivity())
-                    .setTitle("Permiso de ubicación requerido")
-                    .setMessage("Necesitamos acceder a tu ubicación para validar si te encuentras en el lugar correcto y así confirmar tu visita. Este acceso es esencial para continuar con el proceso.")
-                    .setPositiveButton("Aceptar") { _, _ ->
-                        // Solicita el permiso
-                        ActivityCompat.requestPermissions(
-                            requireActivity(),
-                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                            AppConfig.CODE_UBICACION
-                        )
-                    }
-                    .setNegativeButton("Cancelar", null)
-                    .show()
-            } else {
-                // Solicita el permiso directamente si no se necesita explicación
-                ActivityCompat.requestPermissions(
-                    requireActivity(),
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    AppConfig.CODE_UBICACION
-                )
-            }
-        }
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -464,6 +433,24 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         }
     }
+    private fun goToUbicationGoogleMaps(){
+        val latitud = _PUEBLO_MAGICO.latitud
+        val longitud = _PUEBLO_MAGICO.longitud
+
+        // Crear la URI para abrir la ubicación directamente en Google Maps
+        val gmmIntentUri = Uri.parse("geo:$latitud,$longitud?q=$latitud,$longitud")
+        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+
+        // Verifica si hay alguna aplicación que pueda manejar el Intent
+        if (mapIntent.resolveActivity(requireActivity().packageManager) != null) {
+            startActivity(mapIntent)
+        } else {
+            // Si no hay Google Maps instalado, opcionalmente, abre en un navegador
+            val url = "https://www.google.com/maps?q=$latitud,$longitud"
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(browserIntent)
+        }
+    }
     private fun getLocationAndCalculateDistance() {
         try {
             fusedLocationClient.lastLocation
@@ -474,16 +461,32 @@ class PuebloMagicoDetalleFragment : Fragment() {
                         val userLng = it.longitude
 
                         // Obtener la ubicación del pueblo mágico
-                        val puebloLat = _PUEBLO_MAGICO.latitud.toDouble()
-                        val puebloLng = _PUEBLO_MAGICO.longitud.toDouble()
+                        // val puebloLat = _PUEBLO_MAGICO.latitud.toDouble()
+                        // val puebloLng = _PUEBLO_MAGICO.longitud.toDouble()
+
+                        // Obtener la ubicación del pueblo mágico
+                        val puebloLat = "25.7327111".toDouble()
+                        val puebloLng = "-100.1844254".toDouble()
 
                         // Calcular la distancia
                         val results = FloatArray(1)
                         Location.distanceBetween(userLat, userLng, puebloLat, puebloLng, results)
                         val distanceInMeters = results[0]
 
-                        // Mostrar distancia
-                        Snackbar.make(requireView(), "Distancia: $distanceInMeters metros", Snackbar.LENGTH_LONG).show()
+                        // Validar si la distancia es menor o igual a 300 metros
+                        if (distanceInMeters <= 300) {
+                            Snackbar.make(requireView(), "Estás dentro del rango de 300 metros.", Snackbar.LENGTH_LONG).show()
+                            checkCameraPermission()
+                        } else {
+                            MaterialAlertDialogBuilder(requireContext())
+                                .setTitle("Certifica tu visita")
+                                .setMessage("Para certificar tu visita, tómate una foto en las letras del Pueblo Mágico. Presiona el botón 'Abrir mapa' para obtener indicaciones y llegar al lugar.")
+                                .setPositiveButton("Abrir mapa") { dialog, which ->
+                                    goToUbicationGoogleMaps()
+                                }
+                                .setNegativeButton("Cancelar", null)
+                                .show()
+                        }
                     } ?: run {
                         Snackbar.make(requireView(), "No se pudo obtener la ubicación", Snackbar.LENGTH_LONG).show()
                     }
@@ -494,14 +497,25 @@ class PuebloMagicoDetalleFragment : Fragment() {
     }
 
     private fun checkCameraPermission() {
-        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            // Si no se tienen permisos, solicitar permiso
-            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.CAMERA), _CAMERA_REQUEST_CODE)
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED) {
+
+            // Verificar si se debe mostrar una explicación al usuario
+            if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.CAMERA)) {
+
+                // Mostrar un diálogo explicando por qué se necesita el permiso de cámara
+                mostrarAlertActiveCameraConfig()
+            } else {
+                // El usuario ha rechazado el permiso anteriormente
+                Log.d("PermissionRequest", "El usuario ha rechazado el permiso de cámara varias veces y no se puede solicitar nuevamente.")
+                mostrarInformarRechazoPermisoCamara()
+            }
         } else {
             // Si ya se tienen permisos, abrir la cámara
             openCamera()
         }
     }
+
     private fun openCamera() {
         // Crea un archivo para la imagen
         val imageFile = createImageFile()
@@ -520,6 +534,4 @@ class PuebloMagicoDetalleFragment : Fragment() {
         val storageDir: File? = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
     }
-
-
 }
