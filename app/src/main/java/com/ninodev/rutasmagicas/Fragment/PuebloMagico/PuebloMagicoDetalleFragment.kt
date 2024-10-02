@@ -111,16 +111,13 @@ class PuebloMagicoDetalleFragment : Fragment() {
     fun listeners() {
         binding.btnPuebloCertificado.setOnClickListener {
             if (_PUEBLO_MAGICO.visita) {
-                // Aquí el usuario ya ha indicado que ha visitado el pueblo
                 mostrarConfirmacionCertificacion()
-                //checkCameraPermission()
             } else {
-
-                checkLocationPermission()
-                /*checkCameraPermission()
-                certificarVisita()*/
-                // Aquí el usuario no ha indicado que ha visitado el pueblo
-              //  UtilHelper.mostrarSnackbar(requireView(),"Para certificar tu visita, primero debes indicar que has estado en este pueblo mágico.")
+                if(_PUEBLO_MAGICO.visitaCertificada){
+                    mostrarDialogoEliminarCertificacion()
+                }else{
+                    checkLocationPermission()
+                }
             }
         }
         binding.btnUbicacion.setOnClickListener {
@@ -157,6 +154,21 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 }
                 .show()
         }
+    }
+    private fun mostrarDialogoEliminarCertificacion() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Confirmación de eliminación")
+            .setMessage("¿Está seguro de que desea quitar la certificación de su visita al pueblo mágico? " +
+                    "Esto eliminará la validación, su foto de asistencia y desaparecerá de su progreso.")
+            .setPositiveButton("Eliminar") { dialog, _ ->
+                // Aquí llamas a la función para eliminar la certificación
+                certificarVisitaPuebloMagico()// O la función que uses para manejar el toggle
+                dialog.dismiss() // Cerrar el diálogo
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.dismiss() // Cerrar el diálogo sin hacer nada
+            }
+            .show()
     }
     fun initClima() {
         climaService = ClimaService() // Use the property if it's not already initialized
@@ -272,6 +284,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
     private fun setBtnVisitaTrue(){
         binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visitado_azul)
         binding.fondoPuebloVisitado.visibility = View.VISIBLE
+        setBtnCertificadoFalse()
     }
     private fun setBtnVisitaFalse(){
         binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visita_blanco)
@@ -280,10 +293,12 @@ class PuebloMagicoDetalleFragment : Fragment() {
     private fun setBtnCertificadoTrue(){
         binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_azul)
         binding.fondoPuebloCertificado.visibility = View.VISIBLE
+        setBtnVisitaFalse()
     }
     private fun setBtnCertificadoFalse(){
         binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_blanco)
         binding.fondoPuebloCertificado.visibility = View.GONE
+
     }
     private fun showLoading() {
         binding.lottieLoading.visibility = View.VISIBLE
@@ -564,14 +579,43 @@ class PuebloMagicoDetalleFragment : Fragment() {
         // Inicia el launcher de la cámara
         takePictureLauncher.launch(_IMAGEN_URI)
     }
+    private fun certificarVisitaPuebloMagico() {
+        firestoreHelper.toggleVisitaCertificado(
+            HelperUser.getUserId()!!,
+            PueblosMagicosFragment._ESTADO.nombreEstado,
+            _PUEBLO_MAGICO.nombrePueblo,
+            _PUEBLO_MAGICO,
+            onSuccess = { isVerificado ->
+                hideLoading()
+                _PUEBLO_MAGICO.visita = false
+                _PUEBLO_MAGICO.visitaCertificada = isVerificado
+
+                // Verificar el estado de isVerificado
+                if (isVerificado) {
+                    setBtnCertificadoTrue()
+                    UtilHelper.mostrarSnackbar(requireView(), "¡Se certificó la visita al pueblo mágico con éxito!")
+                } else {
+                    setBtnCertificadoFalse()
+                    UtilHelper.mostrarSnackbar(requireView(), "La visita al pueblo mágico no se certificó.")
+                }
+
+                Log.d("Success", "Estado verificado: $isVerificado")
+            },
+            onFailure = { exception ->
+                hideLoading()
+                setBtnCertificadoFalse()
+                UtilHelper.mostrarSnackbar(requireView(), "La visita al pueblo mágico no se certificó.")
+                Log.e("Error", "Ocurrió un error: ${exception.message}")
+            }
+        )
+    }
+
 
     private fun uploadImage(bitmap: Bitmap) {
         // Usar FirestoreDBHelper para subir la imagen
-        val firestoreDBHelper = FirestoreDBHelper()
-        firestoreDBHelper.uploadImageToFirebase(bitmap,
+        firestoreHelper.uploadImageToFirebase(bitmap,
             onSuccess = { imageUrl ->
-                hideLoading()
-                UtilHelper.mostrarSnackbar(requireView(), "Imagen subida exitosamente: $imageUrl")
+                certificarVisitaPuebloMagico()
             },
             onFailure = { exception ->
                 hideLoading()

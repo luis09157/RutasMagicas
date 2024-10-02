@@ -6,6 +6,9 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
+import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
+import com.ninodev.rutasmagicas.Fragment.PuebloMagico.PuebloMagicoDetalleFragment
+import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.Model.MunicipioModel
 import com.ninodev.rutasmagicas.Model.PuebloMagicoModel
@@ -211,6 +214,75 @@ class FirestoreDBHelper {
                 onFailure(exception) // Notificar el fallo
             }
     }
+    fun toggleVisitaCertificado(
+        userId: String,
+        estado: String,
+        municipio: String,
+        puebloMagico: PuebloMagicoModel,
+        onSuccess: (Boolean) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        // Establecer visita en false
+        val visita = false
+        puebloMagico.visita = visita
+
+        // Referencia a la colección "Visitas" dentro del usuario
+        val collectionRef = firestore.collection("RutasMagicas")
+            .document("VisitasPueblosMagicos")
+            .collection("Usuarios")
+            .document(userId)
+            .collection("Visitas")
+
+        // Consulta para buscar el documento que coincide con el estado y municipio
+        val query = collectionRef
+            .whereEqualTo("nombreEstado", estado)
+            .whereEqualTo("nombreMunicipio", municipio)
+
+        // Ejecutar la consulta
+        query.get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    // Recorrer los resultados de la consulta
+                    for (document in querySnapshot) {
+                        // Toggle de la variable 'verificado' y establecer 'visita' en false
+                        val currentVerificado = document.getBoolean("verificado") ?: false
+                        val newVerificado = !currentVerificado
+
+                        document.reference.update("visita", visita, "verificado", newVerificado)
+                            .addOnSuccessListener {
+                                onSuccess(newVerificado) // Notificar el éxito
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("FirestoreDBHelper", "Error actualizando la visita: ${e.message}")
+                                onFailure(e) // Notificar el fallo
+                            }
+                    }
+                } else {
+                    // Si no se encuentra ningún documento, agregar uno nuevo
+                    val newVisitaData = mapOf(
+                        "nombreEstado" to estado,
+                        "nombreMunicipio" to municipio,
+                        "visita" to visita,      // Establecer visita en false para nuevo registro
+                        "verificado" to true     // Inicialmente como true para nuevo registro
+                    )
+
+                    collectionRef.add(newVisitaData)
+                        .addOnSuccessListener {
+                            puebloMagico.visita = false // Actualizar el modelo
+                            onSuccess(true) // Notificar el éxito
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("FirestoreDBHelper", "Error agregando el nuevo registro: ${e.message}")
+                            onFailure(e) // Notificar el fallo
+                        }
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("FirestoreDBHelper", "Error obteniendo los documentos: ${exception.message}")
+                onFailure(exception) // Notificar el fallo
+            }
+    }
+
     fun leerVisitas(
         idUsuario: String,
         nombreEstado: String,
@@ -255,7 +327,6 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
-
     fun contarPueblosVisitadosEnEstado(
         idUsuario: String,
         nombreEstado: String,
@@ -335,13 +406,12 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
-
     fun uploadImageToFirebase(imageBitmap: Bitmap, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
         // Obtener una referencia a Firebase Storage
         val storageRef = storage.reference
 
         // Generar un ID único para el archivo
-        val fileName = "images/${UUID.randomUUID()}.jpg"
+        val fileName = "Certificaciones/${HelperUser.getUserId()}/${PueblosMagicosFragment._ESTADO.nombreEstado}/${PuebloMagicoDetalleFragment._PUEBLO_MAGICO.nombrePueblo}/${HelperUser.getUserId()}.jpg"
         val imageRef = storageRef.child(fileName)
 
         // Convertir el Bitmap a ByteArray
