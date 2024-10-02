@@ -2,17 +2,24 @@ package com.ninodev.rutasmagicas.Fragment.PuebloMagico
 
 import ClimaService
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.location.Location
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.text.HtmlCompat
 import androidx.fragment.app.Fragment
 import com.airbnb.lottie.LottieAnimationView
@@ -32,6 +39,10 @@ import com.ninodev.rutasmagicas.R
 import com.ninodev.rutasmagicas.databinding.FragmentPuebloMagicoDetalleBinding
 import com.ninodev.rutasmagicas.Firebase.FirestoreDBHelper
 import com.ninodev.rutasmagicas.Helper.UtilHelper
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class PuebloMagicoDetalleFragment : Fragment() {
     private val TAG = "PuebloMagicoDetalleFragment"
@@ -47,6 +58,10 @@ class PuebloMagicoDetalleFragment : Fragment() {
     companion object {
         var _PUEBLO_MAGICO: PuebloMagicoModel = PuebloMagicoModel()
         var _CLIMA: ClimaModel = ClimaModel()
+        private val _CAMERA_REQUEST_CODE = 1074
+        private lateinit var _IMAGEN_URI: Uri
+        private val LOCATION_PERMISSION_REQUEST_CODE = 1001
+
     }
 
     override fun onCreateView(
@@ -96,9 +111,14 @@ class PuebloMagicoDetalleFragment : Fragment() {
             if (_PUEBLO_MAGICO.visita) {
                 // Aquí el usuario ya ha indicado que ha visitado el pueblo
                 mostrarConfirmacionCertificacion()
+                //checkCameraPermission()
             } else {
+
+                checkLocationPermission()
+                /*checkCameraPermission()
+                certificarVisita()*/
                 // Aquí el usuario no ha indicado que ha visitado el pueblo
-                UtilHelper.mostrarSnackbar(requireView(),"Para certificar tu visita, primero debes indicar que has estado en este pueblo mágico.")
+              //  UtilHelper.mostrarSnackbar(requireView(),"Para certificar tu visita, primero debes indicar que has estado en este pueblo mágico.")
             }
         }
         binding.btnUbicacion.setOnClickListener {
@@ -245,17 +265,22 @@ class PuebloMagicoDetalleFragment : Fragment() {
             },
             onVisitNotFound = {
                 // Acción cuando no se encuentra la visita
-                binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visita_blanco)
-                binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_blanco)
+                setBtn2True()
                 _PUEBLO_MAGICO.visita = false
                 _PUEBLO_MAGICO.visitaCertificada = false
-                Snackbar.make(requireView(), "No se encontraron visitas a $nombreMunicipio en $nombreEstado", Snackbar.LENGTH_LONG).show()
+                Log.d(TAG, "No se encontraron visitas a $nombreMunicipio en $nombreEstado")
             },
             onFailure = { exception ->
                 // Manejo de errores
                 UtilHelper.mostrarSnackbar(requireView(), "Error al obtener los documentos: ${exception.message}")
             }
         )
+    }
+    private fun setBtn2True(){
+        binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visita_blanco)
+        binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_blanco)
+        binding.fondoPuebloVisitado.visibility = View.GONE
+        binding.fondoPuebloCertificado.visibility = View.GONE
     }
     private fun setBtnVisitaTrue(){
         binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visitado_azul)
@@ -281,59 +306,82 @@ class PuebloMagicoDetalleFragment : Fragment() {
         binding.lottieLoading.visibility = View.GONE
         binding.contenedor.visibility = View.VISIBLE
     }
-    private fun checkLocationAndCalculateDistance() {
-        // Verifica si se tienen permisos de ubicación
-        if (ActivityCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            // Obtén la ubicación actual
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location: Location? ->
-                    if (location != null) {
-                        // Calcula la distancia entre el pueblo mágico y la ubicación actual
-                        val puebloLocation = Location("PuebloMagico")
-                        puebloLocation.latitude = _PUEBLO_MAGICO.latitud.toDouble()
-                        puebloLocation.longitude = _PUEBLO_MAGICO.longitud.toDouble()
+    private fun checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
 
-                        val distanciaEnMetros = location.distanceTo(puebloLocation)
+            // Verificar si se debe mostrar una explicación al usuario
+            if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(),
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
 
-                        // Verifica si la distancia es menor a 10 metros
-                        if (distanciaEnMetros <= 20) {
-                            Snackbar.make(
-                                requireView(),
-                                "Estás dentro del rango de 10 metros del pueblo mágico.",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        } else {
-                            Snackbar.make(
-                                requireView(),
-                                "Estás fuera del rango de 10 metros.",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        }
-                    } else {
-                        Snackbar.make(
-                            requireView(),
-                            "No se pudo obtener la ubicación actual.",
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                    }
-                }
+                // Mostrar un diálogo explicando por qué se necesita el permiso
+                mostrarAlertActiveLocationConfig()
+            } else {
+                // Aquí el usuario ha rechazado el permiso anteriormente
+                Log.d("PermissionRequest", "El usuario ha rechazado el permiso varias veces y no se puede solicitar nuevamente.")
+                mostrarInformarRechazoPermiso()
+            }
         } else {
-            // Si no se tienen permisos, solicitarlos
-            requestLocationPermission()
+            // El permiso ya está concedido
+            getLocationAndCalculateDistance()
         }
     }
+
+    private fun mostrarInformarRechazoPermiso() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Permiso de Ubicación Denegado")
+            .setMessage("Has denegado el acceso a la ubicación varias veces. Para otorgar el permiso, ve a Configuración de la aplicación.")
+            .setPositiveButton("Configuración") { dialog, which ->
+                // Enviar al usuario a la configuración de la aplicación
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                val uri: Uri = Uri.fromParts("package", requireActivity().packageName, null)
+                intent.data = uri
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancelar", null)
+            .setIcon(R.drawable.ic_home) // Opcional: añade un ícono
+            .show()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // El permiso fue concedido
+                getLocationAndCalculateDistance()
+            } else {
+                // El permiso fue denegado
+                Log.d("PermissionRequest", "El usuario ha denegado el permiso.")
+                mostrarAlertActiveLocationConfig()
+            }
+        }
+    }
+
+
+    private fun mostrarAlertActiveLocationConfig() {
+        MaterialAlertDialogBuilder(requireActivity())
+            .setTitle("Permiso de Ubicación Requerido")
+            .setMessage("Esta aplicación necesita acceso a tu ubicación para proporcionar la funcionalidad solicitada. Ve a Configuración para habilitarla.")
+            .setPositiveButton("Configuración") { dialog, which ->
+                // Enviar al usuario a la configuración de la aplicación
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                val uri: Uri = Uri.fromParts("package", requireActivity().packageName, null)
+                intent.data = uri
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancelar", null)
+            .setIcon(R.drawable.ic_home) // Opcional: añade un ícono
+            .show()
+    }
+
     private fun mostrarConfirmacionCertificacion() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Confirmación")
             .setMessage("Ya has indicado que has visitado este pueblo mágico. ¿Deseas certificar tu visita?")
             .setPositiveButton("Sí") { dialog, _ ->
-                checkLocationAndCalculateDistance()
-                toggleVisita()
-                certificarVisita()
+                checkLocationPermission()
+                /*toggleVisita()
+                certificarVisita()*/
                 dialog.dismiss()
             }
             .setNegativeButton("No") { dialog, _ ->
@@ -341,34 +389,137 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
             .show()
     }
-
     private fun certificarVisita() {
         // Aquí pones la lógica para certificar la visita
         UtilHelper.mostrarSnackbar(requireView(),"Tu visita ha sido certificada.")
     }
-
     private fun requestLocationPermission() {
-        requestPermissions(
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-            AppConfig.CODE_UBICACION
-        )
-    }
-
-    // Manejo del resultado de la solicitud de permisos
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == AppConfig.CODE_UBICACION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                checkLocationAndCalculateDistance()
+        if (ContextCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // El permiso ya ha sido concedido
+            // Aquí puedes iniciar las tareas que requieren la ubicación
+        } else {
+            // Verifica si debemos mostrar una explicación sobre por qué se necesita el permiso
+            if (ActivityCompat.shouldShowRequestPermissionRationale(
+                    requireActivity(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+            ) {
+                // Muestra una explicación al usuario y luego solicita el permiso nuevamente
+                MaterialAlertDialogBuilder(requireActivity())
+                    .setTitle("Permiso de ubicación requerido")
+                    .setMessage("Necesitamos acceder a tu ubicación para validar si te encuentras en el lugar correcto y así confirmar tu visita. Este acceso es esencial para continuar con el proceso.")
+                    .setPositiveButton("Aceptar") { _, _ ->
+                        // Solicita el permiso
+                        ActivityCompat.requestPermissions(
+                            requireActivity(),
+                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                            AppConfig.CODE_UBICACION
+                        )
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
             } else {
-                Snackbar.make(
-                    requireView(),
-                    "Permiso de ubicación denegado.",
-                    Snackbar.LENGTH_LONG
-                ).show()
+                // Solicita el permiso directamente si no se necesita explicación
+                ActivityCompat.requestPermissions(
+                    requireActivity(),
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    AppConfig.CODE_UBICACION
+                )
             }
         }
     }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == _CAMERA_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
+            val imageUri = data.data
+
+            // Verificar que la URI no sea nula
+            imageUri?.let { uri ->
+                // Convertir la URI a Bitmap
+                try {
+                    val inputStream = requireActivity().contentResolver.openInputStream(uri)
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+
+                    // Usar FirestoreDBHelper para subir la imagen
+                    val firestoreDBHelper = FirestoreDBHelper()
+                    firestoreDBHelper.uploadImageToFirebase(bitmap,
+                        onSuccess = { imageUrl ->
+                            Log.d("UploadImage", "Imagen subida exitosamente: $imageUrl")
+                            // Aquí puedes guardar la URL en Firestore o hacer algo más
+                        },
+                        onFailure = { exception ->
+                            Log.e("UploadImage", "Error al subir la imagen: ${exception.message}")
+                        }
+                    )
+                } catch (e: Exception) {
+                    Log.e("ImageError", "Error al convertir la URI a Bitmap: ${e.message}")
+                }
+            } ?: run {
+                Log.e("ImageError", "La URI de la imagen es nula.")
+            }
+        }
+    }
+    private fun getLocationAndCalculateDistance() {
+        try {
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        // Obtener la ubicación del usuario
+                        val userLat = it.latitude
+                        val userLng = it.longitude
+
+                        // Obtener la ubicación del pueblo mágico
+                        val puebloLat = _PUEBLO_MAGICO.latitud.toDouble()
+                        val puebloLng = _PUEBLO_MAGICO.longitud.toDouble()
+
+                        // Calcular la distancia
+                        val results = FloatArray(1)
+                        Location.distanceBetween(userLat, userLng, puebloLat, puebloLng, results)
+                        val distanceInMeters = results[0]
+
+                        // Mostrar distancia
+                        Snackbar.make(requireView(), "Distancia: $distanceInMeters metros", Snackbar.LENGTH_LONG).show()
+                    } ?: run {
+                        Snackbar.make(requireView(), "No se pudo obtener la ubicación", Snackbar.LENGTH_LONG).show()
+                    }
+                }
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun checkCameraPermission() {
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            // Si no se tienen permisos, solicitar permiso
+            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.CAMERA), _CAMERA_REQUEST_CODE)
+        } else {
+            // Si ya se tienen permisos, abrir la cámara
+            openCamera()
+        }
+    }
+    private fun openCamera() {
+        // Crea un archivo para la imagen
+        val imageFile = createImageFile()
+        _IMAGEN_URI = FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.fileprovider", imageFile)
+
+        // Intenta abrir la cámara
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, _IMAGEN_URI)
+        }
+        if (intent.resolveActivity(requireActivity().packageManager) != null) {
+            startActivityForResult(intent, _CAMERA_REQUEST_CODE)
+        }
+    }
+    private fun createImageFile(): File {
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val storageDir: File? = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
+    }
+
+
 }

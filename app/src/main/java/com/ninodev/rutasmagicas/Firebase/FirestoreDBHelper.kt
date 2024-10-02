@@ -1,15 +1,21 @@
 package com.ninodev.rutasmagicas.Firebase
 
+import android.graphics.Bitmap
+import android.net.Uri
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.Model.MunicipioModel
 import com.ninodev.rutasmagicas.Model.PuebloMagicoModel
+import java.io.ByteArrayOutputStream
+import java.util.UUID
 
 class FirestoreDBHelper {
 
     private val firestore = FirebaseFirestore.getInstance()
+    private val storage = FirebaseStorage.getInstance()
 
     fun getEstados(
         onSuccess: (MutableList<EstadoModel>) -> Unit,
@@ -330,4 +336,33 @@ class FirestoreDBHelper {
             }
     }
 
+    fun uploadImageToFirebase(imageBitmap: Bitmap, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
+        // Obtener una referencia a Firebase Storage
+        val storageRef = storage.reference
+
+        // Generar un ID único para el archivo
+        val fileName = "images/${UUID.randomUUID()}.jpg"
+        val imageRef = storageRef.child(fileName)
+
+        // Convertir el Bitmap a ByteArray
+        val baos = ByteArrayOutputStream()
+        imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        val data = baos.toByteArray()
+
+        // Subir la imagen
+        imageRef.putBytes(data)
+            .addOnSuccessListener {
+                // Obtener la URL de descarga
+                imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    onSuccess(downloadUri.toString()) // Devolver la URL de la imagen
+                }.addOnFailureListener { exception ->
+                    Log.e("FirestoreDBHelper", "Error obteniendo la URL de descarga: ${exception.message}")
+                    onFailure(exception)
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("FirestoreDBHelper", "Error subiendo la imagen: ${exception.message}")
+                onFailure(exception)
+            }
+    }
 }
