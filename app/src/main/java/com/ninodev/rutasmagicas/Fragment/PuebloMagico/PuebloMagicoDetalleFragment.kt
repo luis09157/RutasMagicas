@@ -84,11 +84,27 @@ class PuebloMagicoDetalleFragment : Fragment() {
         return root
     }
 
+    private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            // La imagen fue capturada, puedes manejarla aquí
+            showLoading()
+            try {
+                val bitmap = BitmapFactory.decodeStream(requireActivity().contentResolver.openInputStream(_IMAGEN_URI))
+                uploadImage(bitmap)  // Llama a tu función para subir la imagen
+            } catch (e: Exception) {
+                hideLoading()
+                UtilHelper.mostrarSnackbar(requireView(), "Error al cargar la imagen: ${e.message}")
+            }
+        } else {
+            UtilHelper.mostrarSnackbar(requireView(), "No se pudo capturar la imagen.")
+        }
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         animacionClima = binding.animacionClima
         init()
     }
+
     fun init() {
         try {
             if (HelperUser.isUserLoggedIn()) {
@@ -128,15 +144,20 @@ class PuebloMagicoDetalleFragment : Fragment() {
             val message: String
             val positiveButtonText: String
 
-            // Configurar el mensaje y los botones según el estado actual de la visita
-            if ( _PUEBLO_MAGICO.visita == true) {
-                title = "Quitar visita"
-                message = "¿Deseas quitar tu visita al pueblo mágico ${_PUEBLO_MAGICO.nombrePueblo}?"
-                positiveButtonText = "Quitar"
+            if (_PUEBLO_MAGICO.visitaCertificada) {
+                title = "Quitar Certificación"
+                message = "Al quitar la certificación de tu visita al pueblo mágico ${_PUEBLO_MAGICO.nombrePueblo}, podrás validar tu visita sin certificación. ¿Estás seguro de que deseas proceder con esta opción?"
+                positiveButtonText = "Continuar"
             } else {
-                title = "Añadir visita"
-                message = "¿Deseas añadir tu visita al pueblo mágico ${_PUEBLO_MAGICO.nombrePueblo}?"
-                positiveButtonText = "Añadir"
+                if (_PUEBLO_MAGICO.visita) {
+                    title = "Quitar visita"
+                    message = "¿Deseas quitar tu visita al pueblo mágico ${_PUEBLO_MAGICO.nombrePueblo}?"
+                    positiveButtonText = "Quitar"
+                } else {
+                    title = "Añadir visita"
+                    message = "¿Deseas añadir tu visita al pueblo mágico ${_PUEBLO_MAGICO.nombrePueblo}?"
+                    positiveButtonText = "Añadir"
+                }
             }
 
             // Crear y mostrar el diálogo de confirmación
@@ -205,20 +226,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
         binding.txtEstado.text = PueblosMagicosFragment._ESTADO.nombreEstado
         binding.txtPuebloMagico.text = "${_PUEBLO_MAGICO.nombrePueblo}"
         binding.txtDescripcion.text = HtmlCompat.fromHtml(_PUEBLO_MAGICO.descripcion, HtmlCompat.FROM_HTML_MODE_LEGACY)
-    }
-    override fun onResume() {
-        super.onResume()
-        requireActivity().onBackPressedDispatcher.addCallback(
-            viewLifecycleOwner,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    UtilFragment.changeFragment(requireActivity().supportFragmentManager, PueblosMagicosFragment(), TAG)
-                }
-            })
-    }
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
     fun toggleVisita() {
         firestoreHelper.toggleVisita(
@@ -300,34 +307,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
         binding.fondoPuebloCertificado.visibility = View.GONE
 
     }
-    private fun showLoading() {
-        binding.lottieLoading.visibility = View.VISIBLE
-        binding.contenedor.visibility = View.GONE
-    }
-    private fun hideLoading() {
-        binding.lottieLoading.visibility = View.GONE
-        binding.contenedor.visibility = View.VISIBLE
-    }
-    private fun checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
-
-            // Verificar si se debe mostrar una explicación al usuario
-            if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(),
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                // Mostrar un diálogo explicando por qué se necesita el permiso
-                mostrarAlertActiveLocationConfig()
-            } else {
-                // Aquí el usuario ha rechazado el permiso anteriormente
-                Log.d("PermissionRequest", "El usuario ha rechazado el permiso varias veces y no se puede solicitar nuevamente.")
-                mostrarInformarRechazoPermiso()
-            }
-        } else {
-            // El permiso ya está concedido
-            getLocationAndCalculateDistance()
-        }
-    }
     private fun mostrarInformarRechazoPermiso() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Permiso de Ubicación Denegado")
@@ -403,7 +382,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
             .show()
     }
-
     private fun goToUbicationGoogleMaps(){
         val latitud = _PUEBLO_MAGICO.latitud
         val longitud = _PUEBLO_MAGICO.longitud
@@ -466,111 +444,11 @@ class PuebloMagicoDetalleFragment : Fragment() {
             e.printStackTrace()
         }
     }
-    private fun checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
-            != PackageManager.PERMISSION_GRANTED) {
-
-            // Verificar si se debe mostrar una explicación al usuario
-            if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.CAMERA)) {
-
-                // Mostrar un diálogo explicando por qué se necesita el permiso de cámara
-                mostrarAlertActiveCameraConfig()
-            } else {
-                // El usuario ha rechazado el permiso anteriormente
-                Log.d("PermissionRequest", "El usuario ha rechazado el permiso de cámara varias veces y no se puede solicitar nuevamente.")
-                mostrarInformarRechazoPermisoCamara()
-            }
-        } else {
-            // Si ya se tienen permisos, abrir la cámara
-            openCamera()
-        }
-    }
     private fun createImageFile(): File {
         val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val storageDir: File? = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
     }
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            LOCATION_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // El permiso de ubicación fue concedido
-                    getLocationAndCalculateDistance()
-                } else {
-                    // El permiso de ubicación fue denegado
-                    Log.d("PermissionRequest", "El usuario ha denegado el permiso de ubicación.")
-                    mostrarAlertActiveLocationConfig()
-                }
-            }
-            _CAMERA_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // El permiso de cámara fue concedido
-                    // Aquí puedes ejecutar la acción que requiere el permiso de cámara
-                    openCamera()
-                } else {
-                    // El permiso de cámara fue denegado
-                    Log.d("PermissionRequest", "El usuario ha denegado el permiso de cámara.")
-                    mostrarInformarRechazoPermisoCamara()
-                }
-            }
-        }
-    }
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == _CAMERA_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
-            val imageUri = data.data
-
-            // Verificar que la URI no sea nula
-            imageUri?.let { uri ->
-                // Convertir la URI a Bitmap
-                try {
-                    showLoading()
-                    val inputStream = requireActivity().contentResolver.openInputStream(uri)
-                    val bitmap = BitmapFactory.decodeStream(inputStream)
-
-                    // Usar FirestoreDBHelper para subir la imagen
-                    val firestoreDBHelper = FirestoreDBHelper()
-                    firestoreDBHelper.uploadImageToFirebase(bitmap,
-                        onSuccess = { imageUrl ->
-                            hideLoading()
-                            UtilHelper.mostrarSnackbar(requireView(), "Imagen subida exitosamente: $imageUrl")
-                            // Aquí puedes guardar la URL en Firestore o hacer algo más
-                        },
-                        onFailure = { exception ->
-                            hideLoading()
-                            UtilHelper.mostrarSnackbar(requireView(), "Error al subir la imagen: ${exception.message}")
-                        }
-                    )
-                } catch (e: Exception) {
-                    hideLoading()
-                    UtilHelper.mostrarSnackbar(requireView(), "Error al convertir la URI a Bitmap: ${e.message}")
-                }
-            } ?: run {
-                hideLoading()
-                UtilHelper.mostrarSnackbar(requireView(), "La URI de la imagen es nula.")
-            }
-        }
-    }
-
-    // Registrar el ActivityResultLauncher para tomar la foto
-    private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
-            // La imagen fue capturada, puedes manejarla aquí
-            showLoading()
-            try {
-                val bitmap = BitmapFactory.decodeStream(requireActivity().contentResolver.openInputStream(_IMAGEN_URI))
-                uploadImage(bitmap)  // Llama a tu función para subir la imagen
-            } catch (e: Exception) {
-                hideLoading()
-                UtilHelper.mostrarSnackbar(requireView(), "Error al cargar la imagen: ${e.message}")
-            }
-        } else {
-            UtilHelper.mostrarSnackbar(requireView(), "No se pudo capturar la imagen.")
-        }
-    }
-
     private fun openCamera() {
         // Crea un archivo para la imagen
         val imageFile = createImageFile()
@@ -609,8 +487,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         )
     }
-
-
     private fun uploadImage(bitmap: Bitmap) {
         // Usar FirestoreDBHelper para subir la imagen
         firestoreHelper.uploadImageToFirebase(bitmap,
@@ -622,6 +498,134 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 UtilHelper.mostrarSnackbar(requireView(), "Error al subir la imagen: ${exception.message}")
             }
         )
+    }
+
+    private fun showLoading() {
+        binding.lottieLoading.visibility = View.VISIBLE
+        binding.contenedor.visibility = View.GONE
+    }
+    private fun hideLoading() {
+        binding.lottieLoading.visibility = View.GONE
+        binding.contenedor.visibility = View.VISIBLE
+    }
+
+    private fun checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+
+            // Verificar si se debe mostrar una explicación al usuario
+            if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(),
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                // Mostrar un diálogo explicando por qué se necesita el permiso
+                mostrarAlertActiveLocationConfig()
+            } else {
+                // Aquí el usuario ha rechazado el permiso anteriormente
+                Log.d("PermissionRequest", "El usuario ha rechazado el permiso varias veces y no se puede solicitar nuevamente.")
+                mostrarInformarRechazoPermiso()
+            }
+        } else {
+            // El permiso ya está concedido
+            getLocationAndCalculateDistance()
+        }
+    }
+    private fun checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED) {
+
+            // Verificar si se debe mostrar una explicación al usuario
+            if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.CAMERA)) {
+
+                // Mostrar un diálogo explicando por qué se necesita el permiso de cámara
+                mostrarAlertActiveCameraConfig()
+            } else {
+                // El usuario ha rechazado el permiso anteriormente
+                Log.d("PermissionRequest", "El usuario ha rechazado el permiso de cámara varias veces y no se puede solicitar nuevamente.")
+                mostrarInformarRechazoPermisoCamara()
+            }
+        } else {
+            // Si ya se tienen permisos, abrir la cámara
+            openCamera()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    UtilFragment.changeFragment(requireActivity().supportFragmentManager, PueblosMagicosFragment(), TAG)
+                }
+            })
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == _CAMERA_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
+            val imageUri = data.data
+
+            // Verificar que la URI no sea nula
+            imageUri?.let { uri ->
+                // Convertir la URI a Bitmap
+                try {
+                    showLoading()
+                    val inputStream = requireActivity().contentResolver.openInputStream(uri)
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+
+                    // Usar FirestoreDBHelper para subir la imagen
+                    val firestoreDBHelper = FirestoreDBHelper()
+                    firestoreDBHelper.uploadImageToFirebase(bitmap,
+                        onSuccess = { imageUrl ->
+                            hideLoading()
+                            UtilHelper.mostrarSnackbar(requireView(), "Imagen subida exitosamente: $imageUrl")
+                            // Aquí puedes guardar la URL en Firestore o hacer algo más
+                        },
+                        onFailure = { exception ->
+                            hideLoading()
+                            UtilHelper.mostrarSnackbar(requireView(), "Error al subir la imagen: ${exception.message}")
+                        }
+                    )
+                } catch (e: Exception) {
+                    hideLoading()
+                    UtilHelper.mostrarSnackbar(requireView(), "Error al convertir la URI a Bitmap: ${e.message}")
+                }
+            } ?: run {
+                hideLoading()
+                UtilHelper.mostrarSnackbar(requireView(), "La URI de la imagen es nula.")
+            }
+        }
+    }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            LOCATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // El permiso de ubicación fue concedido
+                    getLocationAndCalculateDistance()
+                } else {
+                    // El permiso de ubicación fue denegado
+                    Log.d("PermissionRequest", "El usuario ha denegado el permiso de ubicación.")
+                    mostrarAlertActiveLocationConfig()
+                }
+            }
+            _CAMERA_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // El permiso de cámara fue concedido
+                    // Aquí puedes ejecutar la acción que requiere el permiso de cámara
+                    openCamera()
+                } else {
+                    // El permiso de cámara fue denegado
+                    Log.d("PermissionRequest", "El usuario ha denegado el permiso de cámara.")
+                    mostrarInformarRechazoPermisoCamara()
+                }
+            }
+        }
     }
 
 }

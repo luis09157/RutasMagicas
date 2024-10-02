@@ -132,12 +132,15 @@ class FirestoreDBHelper {
 
                 var totalVisits = 0
 
-                // Iterar sobre los documentos y contar aquellos donde 'visita' es true
+                // Iterar sobre los documentos y contar aquellos donde 'visita' o 'verificado' es true
                 visitasSnapshot.documents.forEach { document ->
                     Log.d("FirestoreDBHelper", "Documento: ${document.id}, Datos: ${document.data}")
 
-                    // Verificar si el campo 'visita' es true
-                    if (document.getBoolean("visita") == true) {
+                    // Verificar si el campo 'visita' o 'verificado' es true
+                    val visita = document.getBoolean("visita") == true
+                    val verificado = document.getBoolean("verificado") == true
+
+                    if (visita || verificado) {
                         totalVisits++
                     }
                 }
@@ -150,6 +153,7 @@ class FirestoreDBHelper {
                 onFailure(e)
             }
     }
+
     fun toggleVisita(
         userId: String,
         estado: String,
