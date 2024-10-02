@@ -5,6 +5,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.location.Location
 import android.net.Uri
@@ -17,6 +18,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -341,20 +343,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             .setIcon(R.drawable.ic_menu_camera) // Opcional: añade un ícono relacionado con la cámara
             .show()
     }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // El permiso fue concedido
-                getLocationAndCalculateDistance()
-            } else {
-                // El permiso fue denegado
-                Log.d("PermissionRequest", "El usuario ha denegado el permiso.")
-                mostrarAlertActiveLocationConfig()
-            }
-        }
-    }
     private fun mostrarAlertActiveLocationConfig() {
         MaterialAlertDialogBuilder(requireActivity())
             .setTitle("Permiso de Ubicación Requerido")
@@ -385,7 +373,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             .setIcon(R.drawable.ic_menu_camera) // Opcional: añade un ícono relacionado con la cámara
             .show()
     }
-
     private fun mostrarConfirmacionCertificacion() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Confirmación")
@@ -401,38 +388,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
             .show()
     }
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == _CAMERA_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
-            val imageUri = data.data
-
-            // Verificar que la URI no sea nula
-            imageUri?.let { uri ->
-                // Convertir la URI a Bitmap
-                try {
-                    val inputStream = requireActivity().contentResolver.openInputStream(uri)
-                    val bitmap = BitmapFactory.decodeStream(inputStream)
-
-                    // Usar FirestoreDBHelper para subir la imagen
-                    val firestoreDBHelper = FirestoreDBHelper()
-                    firestoreDBHelper.uploadImageToFirebase(bitmap,
-                        onSuccess = { imageUrl ->
-                            Log.d("UploadImage", "Imagen subida exitosamente: $imageUrl")
-                            // Aquí puedes guardar la URL en Firestore o hacer algo más
-                        },
-                        onFailure = { exception ->
-                            Log.e("UploadImage", "Error al subir la imagen: ${exception.message}")
-                        }
-                    )
-                } catch (e: Exception) {
-                    Log.e("ImageError", "Error al convertir la URI a Bitmap: ${e.message}")
-                }
-            } ?: run {
-                Log.e("ImageError", "La URI de la imagen es nula.")
-            }
-        }
-    }
     private fun goToUbicationGoogleMaps(){
         val latitud = _PUEBLO_MAGICO.latitud
         val longitud = _PUEBLO_MAGICO.longitud
@@ -495,7 +451,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             e.printStackTrace()
         }
     }
-
     private fun checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
             != PackageManager.PERMISSION_GRANTED) {
@@ -515,23 +470,114 @@ class PuebloMagicoDetalleFragment : Fragment() {
             openCamera()
         }
     }
+    private fun createImageFile(): File {
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val storageDir: File? = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
+    }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            LOCATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // El permiso de ubicación fue concedido
+                    getLocationAndCalculateDistance()
+                } else {
+                    // El permiso de ubicación fue denegado
+                    Log.d("PermissionRequest", "El usuario ha denegado el permiso de ubicación.")
+                    mostrarAlertActiveLocationConfig()
+                }
+            }
+            _CAMERA_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // El permiso de cámara fue concedido
+                    // Aquí puedes ejecutar la acción que requiere el permiso de cámara
+                    openCamera()
+                } else {
+                    // El permiso de cámara fue denegado
+                    Log.d("PermissionRequest", "El usuario ha denegado el permiso de cámara.")
+                    mostrarInformarRechazoPermisoCamara()
+                }
+            }
+        }
+    }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == _CAMERA_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
+            val imageUri = data.data
+
+            // Verificar que la URI no sea nula
+            imageUri?.let { uri ->
+                // Convertir la URI a Bitmap
+                try {
+                    showLoading()
+                    val inputStream = requireActivity().contentResolver.openInputStream(uri)
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+
+                    // Usar FirestoreDBHelper para subir la imagen
+                    val firestoreDBHelper = FirestoreDBHelper()
+                    firestoreDBHelper.uploadImageToFirebase(bitmap,
+                        onSuccess = { imageUrl ->
+                            hideLoading()
+                            UtilHelper.mostrarSnackbar(requireView(), "Imagen subida exitosamente: $imageUrl")
+                            // Aquí puedes guardar la URL en Firestore o hacer algo más
+                        },
+                        onFailure = { exception ->
+                            hideLoading()
+                            UtilHelper.mostrarSnackbar(requireView(), "Error al subir la imagen: ${exception.message}")
+                        }
+                    )
+                } catch (e: Exception) {
+                    hideLoading()
+                    UtilHelper.mostrarSnackbar(requireView(), "Error al convertir la URI a Bitmap: ${e.message}")
+                }
+            } ?: run {
+                hideLoading()
+                UtilHelper.mostrarSnackbar(requireView(), "La URI de la imagen es nula.")
+            }
+        }
+    }
+
+    // Registrar el ActivityResultLauncher para tomar la foto
+    private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            // La imagen fue capturada, puedes manejarla aquí
+            showLoading()
+            try {
+                val bitmap = BitmapFactory.decodeStream(requireActivity().contentResolver.openInputStream(_IMAGEN_URI))
+                uploadImage(bitmap)  // Llama a tu función para subir la imagen
+            } catch (e: Exception) {
+                hideLoading()
+                UtilHelper.mostrarSnackbar(requireView(), "Error al cargar la imagen: ${e.message}")
+            }
+        } else {
+            UtilHelper.mostrarSnackbar(requireView(), "No se pudo capturar la imagen.")
+        }
+    }
 
     private fun openCamera() {
         // Crea un archivo para la imagen
         val imageFile = createImageFile()
         _IMAGEN_URI = FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.fileprovider", imageFile)
 
-        // Intenta abrir la cámara
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, _IMAGEN_URI)
-        }
-        if (intent.resolveActivity(requireActivity().packageManager) != null) {
-            startActivityForResult(intent, _CAMERA_REQUEST_CODE)
-        }
+        // Inicia el launcher de la cámara
+        takePictureLauncher.launch(_IMAGEN_URI)
     }
-    private fun createImageFile(): File {
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val storageDir: File? = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
+
+    private fun uploadImage(bitmap: Bitmap) {
+        // Usar FirestoreDBHelper para subir la imagen
+        val firestoreDBHelper = FirestoreDBHelper()
+        firestoreDBHelper.uploadImageToFirebase(bitmap,
+            onSuccess = { imageUrl ->
+                hideLoading()
+                UtilHelper.mostrarSnackbar(requireView(), "Imagen subida exitosamente: $imageUrl")
+            },
+            onFailure = { exception ->
+                hideLoading()
+                UtilHelper.mostrarSnackbar(requireView(), "Error al subir la imagen: ${exception.message}")
+            }
+        )
     }
+
 }
