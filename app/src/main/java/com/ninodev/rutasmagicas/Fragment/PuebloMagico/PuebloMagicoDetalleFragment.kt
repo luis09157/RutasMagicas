@@ -113,7 +113,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
                     HelperUser._ID_USER = userId
                     //Snackbar.make(requireView(), userId, Snackbar.LENGTH_LONG).show()
 
-                    leerVisitas(PueblosMagicosFragment._ESTADO.nombreEstado, _PUEBLO_MAGICO.nombrePueblo)
+                    leerVisitas()
                 } else {
                     Snackbar.make(requireView(), "User ID is null or empty", Snackbar.LENGTH_LONG).show()
                 }
@@ -125,6 +125,8 @@ class PuebloMagicoDetalleFragment : Fragment() {
         }
     }
     fun listeners() {
+
+
         binding.btnPuebloCertificado.setOnClickListener {
             if (_PUEBLO_MAGICO.visita) {
                 mostrarConfirmacionCertificacion()
@@ -132,9 +134,15 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 if(_PUEBLO_MAGICO.visitaCertificada){
                     mostrarDialogoEliminarCertificacion()
                 }else{
-                    checkLocationPermission()
+                    if(UtilHelper.isLocationEnabled(requireContext())){
+                        checkLocationPermission()
+                    }else{
+                       mostrarDialogoActivarGPS()
+                    }
+
                 }
             }
+
         }
         binding.btnUbicacion.setOnClickListener {
            goToUbicationGoogleMaps()
@@ -175,6 +183,22 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 }
                 .show()
         }
+    }
+    private fun mostrarDialogoActivarGPS(){
+        // Mostrar un diálogo para pedir que active la ubicación
+        MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
+            .setTitle("Habilitar ubicación")
+            .setMessage("Para certificar tu visita al Pueblo Mágico, es necesario activar la ubicación. ¿Deseas habilitarla ahora?")
+            .setPositiveButton("Activar") { _, _ ->
+                // Si el usuario acepta, abre la configuración de ubicación
+                val intent = Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                // Si el usuario no quiere activar la ubicación, simplemente cierra el diálogo
+                dialog.dismiss()
+            }
+            .show()
     }
     private fun mostrarDialogoEliminarCertificacion() {
         MaterialAlertDialogBuilder(requireContext())
@@ -234,6 +258,8 @@ class PuebloMagicoDetalleFragment : Fragment() {
             municipio = _PUEBLO_MAGICO.nombrePueblo,
             puebloMagico = _PUEBLO_MAGICO,
             onSuccess = { newVisita ->
+                _PUEBLO_MAGICO.visita = newVisita
+                _PUEBLO_MAGICO.visitaCertificada = false
                 if (newVisita) {
                     setBtnVisitaTrue()
                 } else {
@@ -245,7 +271,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         )
     }
-    fun leerVisitas(nombreEstado: String, nombreMunicipio: String) {
+    fun leerVisitas() {
         firestoreHelper.leerVisitas(
             idUsuario = HelperUser._ID_USER,
             nombreEstado = PueblosMagicosFragment._ESTADO.nombreEstado,
@@ -255,10 +281,10 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 _PUEBLO_MAGICO.visitaCertificada = verificado
                 if (visita) {
                     setBtnVisitaTrue()
-                    Log.d("Verificado", "Visita confirmada a $nombreMunicipio en $nombreEstado")
+                    Log.d("Verificado", "Visita confirmada a ${_PUEBLO_MAGICO.nombrePueblo} en ${PueblosMagicosFragment._ESTADO.nombreEstado}")
                 } else {
                     setBtnVisitaFalse()
-                    Log.d("Verificado", "Visita no realizada a $nombreMunicipio en $nombreEstado")
+                    Log.d("Verificado", "Visita no realizada a ${_PUEBLO_MAGICO.nombrePueblo} en ${PueblosMagicosFragment._ESTADO.nombreEstado}")
                 }
 
                 if (verificado) {
@@ -274,7 +300,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 setBtn2True()
                 _PUEBLO_MAGICO.visita = false
                 _PUEBLO_MAGICO.visitaCertificada = false
-                Log.d(TAG, "No se encontraron visitas a $nombreMunicipio en $nombreEstado")
+                Log.d(TAG, "No se encontraron visitas a ${_PUEBLO_MAGICO.nombrePueblo} en ${PueblosMagicosFragment._ESTADO.nombreEstado}")
             },
             onFailure = { exception ->
                 // Manejo de errores
@@ -372,9 +398,11 @@ class PuebloMagicoDetalleFragment : Fragment() {
             .setTitle("Confirmación")
             .setMessage("Ya has indicado que has visitado este pueblo mágico. ¿Deseas certificar tu visita?")
             .setPositiveButton("Sí") { dialog, _ ->
-                checkLocationPermission()
-                /*toggleVisita()
-                certificarVisita()*/
+                if(UtilHelper.isLocationEnabled(requireContext())){
+                    checkLocationPermission()
+                }else{
+                    mostrarDialogoActivarGPS()
+                }
                 dialog.dismiss()
             }
             .setNegativeButton("No") { dialog, _ ->
