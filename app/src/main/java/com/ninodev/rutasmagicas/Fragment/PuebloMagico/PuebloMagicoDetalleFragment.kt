@@ -111,8 +111,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
                     HelperUser._ID_USER = userId
-                    //Snackbar.make(requireView(), userId, Snackbar.LENGTH_LONG).show()
-
                     leerVisitas()
                 } else {
                     Snackbar.make(requireView(), "User ID is null or empty", Snackbar.LENGTH_LONG).show()
@@ -294,6 +292,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
                     setBtnCertificadoFalse()
                     Log.d("Verificado", "El pueblo mágico no está verificado.")
                 }
+                visibleImagenVerificacion()
             },
             onVisitNotFound = {
                 // Acción cuando no se encuentra la visita
@@ -438,8 +437,8 @@ class PuebloMagicoDetalleFragment : Fragment() {
                         val userLng = it.longitude
 
                         // Obtener la ubicación del pueblo mágico
-                        // val puebloLat = _PUEBLO_MAGICO.latitud.toDouble()
-                        // val puebloLng = _PUEBLO_MAGICO.longitud.toDouble()
+                         //val puebloLat = _PUEBLO_MAGICO.latitud.toDouble()
+                         //val puebloLng = _PUEBLO_MAGICO.longitud.toDouble()
 
                         // Obtener la ubicación del pueblo mágico
                         val puebloLat = "25.7327111".toDouble()
@@ -527,7 +526,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         )
     }
-
     private fun showLoading() {
         binding.lottieLoading.visibility = View.VISIBLE
         binding.contenedor.visibility = View.GONE
@@ -654,6 +652,30 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun visibleImagenVerificacion(){
+        if(_PUEBLO_MAGICO.visitaCertificada){
+            binding.contenedorImagenVerificacion.visibility = View.VISIBLE
+            val url = "${FirestoreDBHelper._URL_STORAGE_FIREBASE}/Certificaciones/${HelperUser.getUserId()}/${PueblosMagicosFragment._ESTADO.nombreEstado}/${_PUEBLO_MAGICO.nombrePueblo}/${HelperUser.getUserId()}.jpg?alt=media"
+
+            val encodedUrl = "${FirestoreDBHelper._URL_STORAGE_FIREBASE}" +
+                    Uri.encode("Certificaciones/${HelperUser.getUserId()}/${PueblosMagicosFragment._ESTADO.nombreEstado}/${_PUEBLO_MAGICO.nombrePueblo}/${HelperUser.getUserId()}.jpg") +
+                    "?alt=media"
+
+            Log.e("YoloSwuag",encodedUrl)
+            Glide.with(requireContext())
+                .load(encodedUrl)
+                .placeholder(R.drawable.img_carga_viaje) // Imagen de marcador de posición
+                .error(R.drawable.img_not_found) // Imagen de error en caso de fallo
+                .into(binding.imagenVerificacion!!)
+        }else{
+            binding.contenedorImagenVerificacion.visibility = View.GONE
+        }
+
+    }
+    private fun hideImagenVerificacion(){
+        binding.contenedorImagenVerificacion.visibility = View.GONE
     }
 
 }
