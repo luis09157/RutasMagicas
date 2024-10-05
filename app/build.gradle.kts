@@ -67,6 +67,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("org.jsoup:jsoup:1.16.1")
     implementation(libs.firebase.firestore.ktx)
+    implementation("com.karumi:dexter:6.2.3")
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

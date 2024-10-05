@@ -2,7 +2,6 @@ package com.ninodev.rutasmagicas.Fragment.PuebloMagico
 
 import ClimaService
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -11,7 +10,6 @@ import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
@@ -30,7 +28,6 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import com.ninodev.rutasmagicas.Config.AppConfig
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment
@@ -463,12 +460,8 @@ class PuebloMagicoDetalleFragment : Fragment() {
                         val userLng = it.longitude
 
                         // Obtener la ubicación del pueblo mágico
-                         //val puebloLat = _PUEBLO_MAGICO.latitud.toDouble()
-                         //val puebloLng = _PUEBLO_MAGICO.longitud.toDouble()
-
-                        // Obtener la ubicación del pueblo mágico
-                        val puebloLat = "25.7327111".toDouble()
-                        val puebloLng = "-100.1844254".toDouble()
+                         val puebloLat = _PUEBLO_MAGICO.latitud.toDouble()
+                         val puebloLng = _PUEBLO_MAGICO.longitud.toDouble()
 
                         // Calcular la distancia
                         val results = FloatArray(1)
@@ -591,34 +584,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
             )
         }
     }
-
-
-    /*private fun uploadImage(bitmap: Bitmap?) {
-        // Verificar si el bitmap no es nulo
-        if (bitmap == null) {
-            UtilHelper.mostrarSnackbar(requireView(), "Error: La imagen está vacía.")
-            return
-        }
-
-        // Mostrar un indicador de carga (si es necesario)
-        showLoading()
-
-        // Usar FirestoreDBHelper para subir la imagen
-        firestoreHelper.uploadImageToFirebase(bitmap, _PUEBLO_MAGICO.imagenVerificada,
-            onSuccess = { imageUrl ->
-                // Asignar el bitmap a la variable
-                _IMG_VISITA_VERIFICADA = bitmap
-
-                // Llamar al método para certificar la visita
-                certificarVisitaPuebloMagico()
-            },
-            onFailure = { exception ->
-                hideLoading()  // Ocultar el indicador de carga
-                UtilHelper.mostrarSnackbar(requireView(), "Error al subir la imagen: ${exception.message}")
-            }
-        )
-    }*/
-
     private fun showLoading() {
         binding.lottieLoading.visibility = View.VISIBLE
         binding.contenedor.visibility = View.GONE
@@ -727,7 +692,6 @@ class PuebloMagicoDetalleFragment : Fragment() {
         }
 
     }
-
     private fun setImgVerficada(){
         Glide.with(requireContext())
             .load(_PUEBLO_MAGICO.imagenVerificada)
