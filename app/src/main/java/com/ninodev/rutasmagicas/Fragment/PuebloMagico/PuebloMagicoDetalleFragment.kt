@@ -63,7 +63,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
         val _CAMERA_REQUEST_CODE = 1074
         lateinit var _IMAGEN_URI: Uri
         val LOCATION_PERMISSION_REQUEST_CODE = 1001
-        lateinit var _IMG_VISITA_VERIFICADA : Bitmap
+        var _IMG_VISITA_VERIFICADA: Bitmap? = null
 
     }
 
@@ -477,7 +477,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
 
                         // Validar si la distancia es menor o igual a 300 metros
                         if (distanceInMeters <= 300) {
-                            Snackbar.make(requireView(), "Estás dentro del rango de 300 metros.", Snackbar.LENGTH_LONG).show()
+                            //Snackbar.make(requireView(), "Estás dentro del rango de 300 metros.", Snackbar.LENGTH_LONG).show()
                             checkCameraPermission()
                         } else {
                             MaterialAlertDialogBuilder(requireContext())
@@ -510,7 +510,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
         // Inicia el launcher de la cámara
         takePictureLauncher.launch(_IMAGEN_URI)
     }
-    private fun certificarVisitaPuebloMagico() {
+    fun certificarVisitaPuebloMagico() {
         // Mostrar carga mientras se procesa
         showLoading()
 
@@ -519,40 +519,79 @@ class PuebloMagicoDetalleFragment : Fragment() {
         val estado = PueblosMagicosFragment._ESTADO.nombreEstado
         val municipio = _PUEBLO_MAGICO.nombrePueblo
 
-        firestoreHelper.toggleVisitaCertificado(
-            userId,
-            estado,
-            municipio,
-            _PUEBLO_MAGICO,
-            _IMG_VISITA_VERIFICADA, // Pasar la imagen Bitmap a la función
-            onSuccess = { isVerificado ->
-                hideLoading()
-                _PUEBLO_MAGICO.visita = false
-                _PUEBLO_MAGICO.visitaCertificada = isVerificado
+        // Validar si _IMG_VISITA_VERIFICADA no es null
+        if (_IMG_VISITA_VERIFICADA != null) {
+            // Si está inicializada (no es null), subimos la imagen y actualizamos los datos
+            firestoreHelper.toggleVisitaCertificado(
+                userId,
+                estado,
+                municipio,
+                _PUEBLO_MAGICO,
+                _IMG_VISITA_VERIFICADA!!, // Pasar la imagen Bitmap a la función
+                onSuccess = { isVerificado ->
+                    hideLoading()
+                    _PUEBLO_MAGICO.visita = false
+                    _PUEBLO_MAGICO.visitaCertificada = isVerificado
 
-                // Verificar el estado de isVerificado
-                if (isVerificado) {
-                    setBtnCertificadoTrue()
-                    contenedorImageVerificadaShow()
-                    UtilHelper.mostrarSnackbar(requireView(), "¡Se certificó la visita al pueblo mágico con éxito!")
-                } else {
-                    setBtnCertificadoFalse()
+                    // Verificar el estado de isVerificado
+                    if (isVerificado) {
+                        setBtnCertificadoTrue()
+                        contenedorImageVerificadaShow()
+                        UtilHelper.mostrarSnackbar(requireView(), "¡Se certificó la visita al pueblo mágico con éxito!")
+                    } else {
+                        setBtnCertificadoFalse()
+                        contenedorImageVerificadaHide()
+                        UtilHelper.mostrarSnackbar(requireView(), "La visita al pueblo mágico no se certificó.")
+                    }
+
+                    Log.d("Success", "Estado verificado: $isVerificado")
+                },
+                onFailure = { exception ->
+                    hideLoading()
+                    setBtn2True()
                     contenedorImageVerificadaHide()
+
                     UtilHelper.mostrarSnackbar(requireView(), "La visita al pueblo mágico no se certificó.")
+                    Log.e("Error", "Ocurrió un error: ${exception.message}")
                 }
+            )
+        } else {
+            // Si es null, actualizamos solo los estatus sin subir la imagen
+            firestoreHelper.toggleVisitaCertificadoSinImagen(
+                userId,
+                estado,
+                municipio,
+                _PUEBLO_MAGICO,
+                onSuccess = { isVerificado ->
+                    hideLoading()
+                    _PUEBLO_MAGICO.visita = false
+                    _PUEBLO_MAGICO.visitaCertificada = isVerificado
 
-                Log.d("Success", "Estado verificado: $isVerificado")
-            },
-            onFailure = { exception ->
-                hideLoading()
-                setBtn2True()
-                contenedorImageVerificadaHide()
+                    // Verificar el estado de isVerificado
+                    if (isVerificado) {
+                        setBtnCertificadoTrue()
+                        contenedorImageVerificadaShow()
+                        UtilHelper.mostrarSnackbar(requireView(), "¡Se certificó la visita al pueblo mágico con éxito!")
+                    } else {
+                        setBtnCertificadoFalse()
+                        contenedorImageVerificadaHide()
+                        UtilHelper.mostrarSnackbar(requireView(), "La visita al pueblo mágico no se certificó.")
+                    }
 
-                UtilHelper.mostrarSnackbar(requireView(), "La visita al pueblo mágico no se certificó.")
-                Log.e("Error", "Ocurrió un error: ${exception.message}")
-            }
-        )
+                    Log.d("Success", "Estado verificado sin imagen: $isVerificado")
+                },
+                onFailure = { exception ->
+                    hideLoading()
+                    setBtn2True()
+                    contenedorImageVerificadaHide()
+
+                    UtilHelper.mostrarSnackbar(requireView(), "La visita al pueblo mágico no se certificó.")
+                    Log.e("Error", "Ocurrió un error: ${exception.message}")
+                }
+            )
+        }
     }
+
 
     /*private fun uploadImage(bitmap: Bitmap?) {
         // Verificar si el bitmap no es nulo

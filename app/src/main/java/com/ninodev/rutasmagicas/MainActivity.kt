@@ -21,6 +21,7 @@ import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.Helper.UtilHelper
 import com.ninodev.rutasmagicas.databinding.ActivityMainBinding
 import android.Manifest
+import com.ninodev.rutasmagicas.Fragment.Perfil.MiPerfil
 
 class MainActivity : AppCompatActivity() {
 
@@ -61,6 +62,11 @@ class MainActivity : AppCompatActivity() {
             when (menuItem.itemId) {
                 R.id.nav_home -> {
                     UtilFragment.changeFragment(supportFragmentManager, HomeFragment(), TAG)
+                    binding.drawerLayout.closeDrawer(GravityCompat.START)
+                    true
+                }
+                R.id.nav_mi_perfil -> {
+                    UtilFragment.changeFragment(supportFragmentManager, MiPerfil(), TAG)
                     binding.drawerLayout.closeDrawer(GravityCompat.START)
                     true
                 }

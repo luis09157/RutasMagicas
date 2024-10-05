@@ -14,13 +14,13 @@ import android.view.ViewGroup
 import android.widget.EditText
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
-import com.google.android.datatransport.BuildConfig
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.ktx.BuildConfig
 import com.ninodev.rutasmagicas.Config.AppConfig
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Helper.UtilFragment

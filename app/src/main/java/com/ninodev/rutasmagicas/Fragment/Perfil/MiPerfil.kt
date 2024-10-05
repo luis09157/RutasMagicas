@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.ninodev.rutasmagicas.Firebase.FirestoreDBHelper
+import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.R
@@ -43,7 +44,7 @@ class MiPerfil : Fragment() {
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    UtilFragment.changeFragment(requireActivity().supportFragmentManager, PueblosMagicosFragment(), TAG)
+                    UtilFragment.changeFragment(requireActivity().supportFragmentManager, HomeFragment(), TAG)
                 }
             })
     }
