@@ -3,8 +3,10 @@ package com.ninodev.rutasmagicas.Firebase
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
 import com.ninodev.rutasmagicas.Fragment.PuebloMagico.PuebloMagicoDetalleFragment
@@ -186,15 +188,19 @@ class FirestoreDBHelper {
                 if (!querySnapshot.isEmpty) {
                     // Recorrer los resultados de la consulta
                     for (document in querySnapshot) {
-                        // Actualizar el campo 'visita' en Firestore
-                        document.reference.update("visita", newVisita)
-                            .addOnSuccessListener {
-                                onSuccess(newVisita) // Notificar el éxito
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("FirestoreDBHelper", "Error actualizando la visita: ${e.message}")
-                                onFailure(e) // Notificar el fallo
-                            }
+                        // Actualizar los campos 'visita', 'verificado' y 'imagenVerificada' en Firestore
+                        document.reference.update(
+                            mapOf(
+                                "visita" to newVisita,
+                                "verificado" to false, // Asegurar que 'verificado' esté siempre en false
+                                "imagenVerificada" to if (newVisita) "" else document.getString("imagenVerificada") // Establecer imagenVerificada a "" si visita es true
+                            )
+                        ).addOnSuccessListener {
+                            onSuccess(newVisita) // Notificar el éxito
+                        }.addOnFailureListener { e ->
+                            Log.e("FirestoreDBHelper", "Error actualizando la visita: ${e.message}")
+                            onFailure(e) // Notificar el fallo
+                        }
                     }
                 } else {
                     // Si no se encuentra ningún documento, agregar uno nuevo
@@ -202,7 +208,8 @@ class FirestoreDBHelper {
                         "nombreEstado" to estado,
                         "nombreMunicipio" to municipio,
                         "visita" to true,
-                        "verificado" to false
+                        "verificado" to false, // Forzar verificado a false en la creación
+                        "imagenVerificada" to "" // Inicializar imagenVerificada como "" al crear
                     )
 
                     collectionRef.add(newVisitaData)
@@ -221,80 +228,14 @@ class FirestoreDBHelper {
                 onFailure(exception) // Notificar el fallo
             }
     }
-    fun toggleVisitaCertificado(
-        userId: String,
-        estado: String,
-        municipio: String,
-        puebloMagico: PuebloMagicoModel,
-        onSuccess: (Boolean) -> Unit,
-        onFailure: (Exception) -> Unit
-    ) {
-        // Establecer visita en false
-        val visita = false
-        puebloMagico.visita = visita
 
-        // Referencia a la colección "Visitas" dentro del usuario
-        val collectionRef = firestore.collection("RutasMagicas")
-            .document("VisitasPueblosMagicos")
-            .collection("Usuarios")
-            .document(userId)
-            .collection("Visitas")
 
-        // Consulta para buscar el documento que coincide con el estado y municipio
-        val query = collectionRef
-            .whereEqualTo("nombreEstado", estado)
-            .whereEqualTo("nombreMunicipio", municipio)
-
-        // Ejecutar la consulta
-        query.get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    // Recorrer los resultados de la consulta
-                    for (document in querySnapshot) {
-                        // Toggle de la variable 'verificado' y establecer 'visita' en false
-                        val currentVerificado = document.getBoolean("verificado") ?: false
-                        val newVerificado = !currentVerificado
-
-                        document.reference.update("visita", visita, "verificado", newVerificado)
-                            .addOnSuccessListener {
-                                onSuccess(newVerificado) // Notificar el éxito
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("FirestoreDBHelper", "Error actualizando la visita: ${e.message}")
-                                onFailure(e) // Notificar el fallo
-                            }
-                    }
-                } else {
-                    // Si no se encuentra ningún documento, agregar uno nuevo
-                    val newVisitaData = mapOf(
-                        "nombreEstado" to estado,
-                        "nombreMunicipio" to municipio,
-                        "visita" to visita,      // Establecer visita en false para nuevo registro
-                        "verificado" to true     // Inicialmente como true para nuevo registro
-                    )
-
-                    collectionRef.add(newVisitaData)
-                        .addOnSuccessListener {
-                            puebloMagico.visita = false // Actualizar el modelo
-                            onSuccess(true) // Notificar el éxito
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("FirestoreDBHelper", "Error agregando el nuevo registro: ${e.message}")
-                            onFailure(e) // Notificar el fallo
-                        }
-                }
-            }
-            .addOnFailureListener { exception ->
-                Log.e("FirestoreDBHelper", "Error obteniendo los documentos: ${exception.message}")
-                onFailure(exception) // Notificar el fallo
-            }
-    }
 
     fun leerVisitas(
         idUsuario: String,
         nombreEstado: String,
         nombreMunicipio: String,
-        onVisitFound: (visita: Boolean, verificado: Boolean) -> Unit, // Callback para devolver ambos valores
+        onVisitFound: (visita: Boolean, verificado: Boolean, imagenVerificada: String) -> Unit, // Callback actualizado para devolver tres valores
         onVisitNotFound: () -> Unit, // Callback si no hay visitas encontradas
         onFailure: (Exception) -> Unit // Callback para manejar errores
     ) {
@@ -316,12 +257,13 @@ class FirestoreDBHelper {
                 if (!querySnapshot.isEmpty) {
                     // Recorre los resultados de la consulta
                     for (document in querySnapshot) {
-                        // Obtener los valores de "visita" y "verificado", por defecto false si no están presentes
+                        // Obtener los valores de "visita", "verificado", y "imagenVerificada"
                         val visita = document.getBoolean("visita") ?: false
                         val verificado = document.getBoolean("verificado") ?: false
+                        val imagenVerificada = document.getString("imagenVerificada") ?: "" // Obtener la URL de la imagen
 
-                        // Devolver ambos valores mediante el callback
-                        onVisitFound(visita, verificado)
+                        // Devolver los valores mediante el callback
+                        onVisitFound(visita, verificado, imagenVerificada)
                     }
                 } else {
                     // No se encontraron documentos, ejecutar callback de visita no encontrada
@@ -334,6 +276,7 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
+
     fun contarPueblosVisitadosEnEstado(
         idUsuario: String,
         nombreEstado: String,
@@ -413,27 +356,146 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
-    fun uploadImageToFirebase(imageBitmap: Bitmap, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
-        // Obtener una referencia a Firebase Storage
-        val storageRef = storage.reference
+    fun toggleVisitaCertificado(
+        userId: String,
+        estado: String,
+        municipio: String,
+        puebloMagico: PuebloMagicoModel,
+        imageBitmap: Bitmap, // Imagen que se va a subir
+        onSuccess: (Boolean) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        // Establecer visita en false
+        val visita = false
+        puebloMagico.visita = visita
 
-        // Generar un ID único para el archivo
-        val fileName = "Certificaciones/${HelperUser.getUserId()}/${PueblosMagicosFragment._ESTADO.nombreEstado}/${PuebloMagicoDetalleFragment._PUEBLO_MAGICO.nombrePueblo}/${HelperUser.getUserId()}.jpg"
+        // Referencia a la colección "Visitas" dentro del usuario
+        val collectionRef = firestore.collection("RutasMagicas")
+            .document("VisitasPueblosMagicos")
+            .collection("Usuarios")
+            .document(userId)
+            .collection("Visitas")
+
+        // Subir la imagen a Firebase antes de cualquier actualización en Firestore
+        uploadImageToFirebase(imageBitmap, puebloMagico.imagenVerificada, { imageUrl ->
+            // Guardar la URL de la imagen verificada en el modelo
+            puebloMagico.imagenVerificada = imageUrl
+
+            // Consulta para buscar el documento que coincide con el estado y municipio
+            val query = collectionRef
+                .whereEqualTo("nombreEstado", estado)
+                .whereEqualTo("nombreMunicipio", municipio)
+
+            // Ejecutar la consulta para actualizar o crear el documento en Firestore
+            query.get()
+                .addOnSuccessListener { querySnapshot ->
+                    if (!querySnapshot.isEmpty) {
+                        // Recorrer los resultados de la consulta
+                        for (document in querySnapshot) {
+                            // Toggle de la variable 'verificado' y establecer 'visita' en false
+                            val currentVerificado = document.getBoolean("verificado") ?: false
+                            val newVerificado = !currentVerificado
+
+                            // Actualizar el documento en Firestore
+                            document.reference.update(
+                                "visita", visita,
+                                "verificado", newVerificado,
+                                "imagenVerificada", if (newVerificado) imageUrl else ""
+                            ).addOnSuccessListener {
+                                onSuccess(newVerificado) // Notificar el éxito
+                            }.addOnFailureListener { e ->
+                                Log.e("FirestoreDBHelper", "Error actualizando la visita: ${e.message}")
+                                onFailure(e) // Notificar el fallo
+                            }
+                        }
+                    } else {
+                        // Si no se encuentra ningún documento, agregar uno nuevo
+                        val newVisitaData = mapOf(
+                            "nombreEstado" to estado,
+                            "nombreMunicipio" to municipio,
+                            "visita" to visita, // Establecer visita en false para nuevo registro
+                            "verificado" to true, // Inicialmente como true para nuevo registro
+                            "imagenVerificada" to imageUrl // Guardar la URL de la imagen verificada
+                        )
+
+                        collectionRef.add(newVisitaData)
+                            .addOnSuccessListener {
+                                puebloMagico.visita = false // Actualizar el modelo
+                                onSuccess(true) // Notificar el éxito
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("FirestoreDBHelper", "Error agregando el nuevo registro: ${e.message}")
+                                onFailure(e) // Notificar el fallo
+                            }
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("FirestoreDBHelper", "Error obteniendo los documentos: ${exception.message}")
+                    onFailure(exception) // Notificar el fallo
+                }
+        }, onFailure) // Aquí se pasa correctamente el onFailure
+    }
+
+
+    fun uploadImageToFirebase(
+        imageBitmap: Bitmap,
+        previousImageUrl: String?, // URL de la imagen anterior
+        onSuccess: (String) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        if (imageBitmap == null) {
+            Log.e("FirestoreDBHelper", "El Bitmap es nulo.")
+            onFailure(Exception("El Bitmap es nulo."))
+            return
+        }
+
+        val storageRef = FirebaseStorage.getInstance().reference
+        val uniqueID = UUID.randomUUID().toString()
+        val fileName = "Certificaciones/${HelperUser.getUserId()}/${PueblosMagicosFragment._ESTADO.nombreEstado}/${PuebloMagicoDetalleFragment._PUEBLO_MAGICO.nombrePueblo}/$uniqueID.jpg"
         val imageRef = storageRef.child(fileName)
 
-        // Convertir el Bitmap a ByteArray
+        // Si hay una URL anterior, intentamos eliminar la imagen anterior
+        previousImageUrl?.let { url ->
+            if (url.isNotEmpty()) {
+                val previousImageRef = storageRef.storage.getReferenceFromUrl(url)
+                Log.d("FirestoreDBHelper", "Intentando eliminar la imagen anterior en: $url")
+
+                previousImageRef.delete()
+                    .addOnSuccessListener {
+                        Log.d("FirestoreDBHelper", "Imagen anterior eliminada correctamente.")
+                        uploadNewImage(imageRef, imageBitmap, onSuccess, onFailure) // Subir la nueva imagen
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.e("FirestoreDBHelper", "Error eliminando la imagen anterior: ${exception.message}", exception)
+                        onFailure(exception) // Llamar al onFailure aquí si no se puede eliminar
+                    }
+            } else {
+                Log.e("FirestoreDBHelper", "La URL de la imagen anterior está vacía.")
+                uploadNewImage(imageRef, imageBitmap, onSuccess, onFailure) // Subir la nueva imagen si no hay URL
+            }
+        } ?: run {
+            Log.d("FirestoreDBHelper", "No hay imagen anterior, subiendo una nueva.")
+            uploadNewImage(imageRef, imageBitmap, onSuccess, onFailure) // Subir la nueva imagen si no hay URL
+        }
+    }
+
+    // Función para subir una nueva imagen
+    private fun uploadNewImage(
+        imageRef: StorageReference,
+        imageBitmap: Bitmap,
+        onSuccess: (String) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
         val baos = ByteArrayOutputStream()
         imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
         val data = baos.toByteArray()
 
-        // Subir la imagen
         imageRef.putBytes(data)
             .addOnSuccessListener {
-                // Obtener la URL de descarga
-                imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                    onSuccess(downloadUri.toString()) // Devolver la URL de la imagen
+                imageRef.downloadUrl.addOnSuccessListener { uri ->
+                    onSuccess(uri.toString()) // Notificar el éxito
                 }.addOnFailureListener { exception ->
-                    Log.e("FirestoreDBHelper", "Error obteniendo la URL de descarga: ${exception.message}")
+                    Log.e("FirestoreDBHelper", "Error obteniendo la URL de la imagen subida: ${exception.message}")
                     onFailure(exception)
                 }
             }
@@ -442,4 +504,8 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
+
+
+
+
 }

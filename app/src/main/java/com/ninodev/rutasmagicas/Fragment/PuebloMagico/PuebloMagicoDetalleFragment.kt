@@ -60,9 +60,10 @@ class PuebloMagicoDetalleFragment : Fragment() {
     companion object {
         var _PUEBLO_MAGICO: PuebloMagicoModel = PuebloMagicoModel()
         var _CLIMA: ClimaModel = ClimaModel()
-        private val _CAMERA_REQUEST_CODE = 1074
-        private lateinit var _IMAGEN_URI: Uri
-        private val LOCATION_PERMISSION_REQUEST_CODE = 1001
+        val _CAMERA_REQUEST_CODE = 1074
+        lateinit var _IMAGEN_URI: Uri
+        val LOCATION_PERMISSION_REQUEST_CODE = 1001
+        lateinit var _IMG_VISITA_VERIFICADA : Bitmap
 
     }
 
@@ -90,7 +91,10 @@ class PuebloMagicoDetalleFragment : Fragment() {
             showLoading()
             try {
                 val bitmap = BitmapFactory.decodeStream(requireActivity().contentResolver.openInputStream(_IMAGEN_URI))
-                uploadImage(bitmap)  // Llama a tu función para subir la imagen
+                _IMG_VISITA_VERIFICADA = bitmap
+                certificarVisitaPuebloMagico()
+
+               // uploadImage(bitmap)  // Llama a tu función para subir la imagen
             } catch (e: Exception) {
                 hideLoading()
                 UtilHelper.mostrarSnackbar(requireView(), "Error al cargar la imagen: ${e.message}")
@@ -258,13 +262,18 @@ class PuebloMagicoDetalleFragment : Fragment() {
             onSuccess = { newVisita ->
                 _PUEBLO_MAGICO.visita = newVisita
                 _PUEBLO_MAGICO.visitaCertificada = false
+                contenedorImageVerificadaHide()
+
                 if (newVisita) {
                     setBtnVisitaTrue()
+                    UtilHelper.mostrarSnackbar(requireView(), "¡Tu visita al pueblo mágico se ha añadido exitosamente.!")
                 } else {
                     setBtnVisitaFalse()
+                    UtilHelper.mostrarSnackbar(requireView(), "¡Tu visita al pueblo mágico se ha retirado.!")
                 }
             },
             onFailure = { exception ->
+                contenedorImageVerificadaHide()
                 Snackbar.make(requireView(), "Error al actualizar la visita: ${exception.message}", Snackbar.LENGTH_LONG).show()
             }
         )
@@ -274,9 +283,12 @@ class PuebloMagicoDetalleFragment : Fragment() {
             idUsuario = HelperUser._ID_USER,
             nombreEstado = PueblosMagicosFragment._ESTADO.nombreEstado,
             nombreMunicipio = _PUEBLO_MAGICO.nombrePueblo,
-            onVisitFound = { visita, verificado ->
+            onVisitFound = { visita, verificado, imagenVerificada ->
                 _PUEBLO_MAGICO.visita = visita
                 _PUEBLO_MAGICO.visitaCertificada = verificado
+                _PUEBLO_MAGICO.imagenVerificada = imagenVerificada
+                contenedorImageVerificadaHide()
+
                 if (visita) {
                     setBtnVisitaTrue()
                     Log.d("Verificado", "Visita confirmada a ${_PUEBLO_MAGICO.nombrePueblo} en ${PueblosMagicosFragment._ESTADO.nombreEstado}")
@@ -286,7 +298,9 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 }
 
                 if (verificado) {
+                    contenedorImageVerificadaShow()
                     setBtnCertificadoTrue()
+                    setImgVerficada()
                     Log.d("Verificado", "El pueblo mágico está verificado.")
                 } else {
                     setBtnCertificadoFalse()
@@ -307,11 +321,21 @@ class PuebloMagicoDetalleFragment : Fragment() {
             }
         )
     }
+
+    private fun contenedorImageVerificadaShow(){
+        binding.contenedorImagenVerificacion.visibility = View.VISIBLE
+        visibleImagenVerificacion()
+    }
+    private fun contenedorImageVerificadaHide(){
+        binding.contenedorImagenVerificacion.visibility = View.GONE
+        visibleImagenVerificacion()
+    }
     private fun setBtn2True(){
         binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visita_blanco)
         binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_blanco)
         binding.fondoPuebloVisitado.visibility = View.GONE
         binding.fondoPuebloCertificado.visibility = View.GONE
+        visibleImagenVerificacion()
     }
     private fun setBtnVisitaTrue(){
         binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visitado_azul)
@@ -321,6 +345,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
     private fun setBtnVisitaFalse(){
         binding.btnPuebloSeleccionado.setImageResource(R.drawable.imagen_visita_blanco)
         binding.fondoPuebloVisitado.visibility = View.GONE
+        visibleImagenVerificacion()
     }
     private fun setBtnCertificadoTrue(){
         binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_azul)
@@ -330,6 +355,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
     private fun setBtnCertificadoFalse(){
         binding.btnPuebloCertificado.setImageResource(R.drawable.img_verificar_blanco)
         binding.fondoPuebloCertificado.visibility = View.GONE
+        visibleImagenVerificacion()
 
     }
     private fun mostrarInformarRechazoPermiso() {
@@ -485,11 +511,20 @@ class PuebloMagicoDetalleFragment : Fragment() {
         takePictureLauncher.launch(_IMAGEN_URI)
     }
     private fun certificarVisitaPuebloMagico() {
+        // Mostrar carga mientras se procesa
+        showLoading()
+
+        // Obtener los parámetros necesarios
+        val userId = HelperUser.getUserId()!!
+        val estado = PueblosMagicosFragment._ESTADO.nombreEstado
+        val municipio = _PUEBLO_MAGICO.nombrePueblo
+
         firestoreHelper.toggleVisitaCertificado(
-            HelperUser.getUserId()!!,
-            PueblosMagicosFragment._ESTADO.nombreEstado,
-            _PUEBLO_MAGICO.nombrePueblo,
+            userId,
+            estado,
+            municipio,
             _PUEBLO_MAGICO,
+            _IMG_VISITA_VERIFICADA, // Pasar la imagen Bitmap a la función
             onSuccess = { isVerificado ->
                 hideLoading()
                 _PUEBLO_MAGICO.visita = false
@@ -498,9 +533,11 @@ class PuebloMagicoDetalleFragment : Fragment() {
                 // Verificar el estado de isVerificado
                 if (isVerificado) {
                     setBtnCertificadoTrue()
+                    contenedorImageVerificadaShow()
                     UtilHelper.mostrarSnackbar(requireView(), "¡Se certificó la visita al pueblo mágico con éxito!")
                 } else {
                     setBtnCertificadoFalse()
+                    contenedorImageVerificadaHide()
                     UtilHelper.mostrarSnackbar(requireView(), "La visita al pueblo mágico no se certificó.")
                 }
 
@@ -508,24 +545,41 @@ class PuebloMagicoDetalleFragment : Fragment() {
             },
             onFailure = { exception ->
                 hideLoading()
-                setBtnCertificadoFalse()
+                setBtn2True()
+                contenedorImageVerificadaHide()
+
                 UtilHelper.mostrarSnackbar(requireView(), "La visita al pueblo mágico no se certificó.")
                 Log.e("Error", "Ocurrió un error: ${exception.message}")
             }
         )
     }
-    private fun uploadImage(bitmap: Bitmap) {
+
+    /*private fun uploadImage(bitmap: Bitmap?) {
+        // Verificar si el bitmap no es nulo
+        if (bitmap == null) {
+            UtilHelper.mostrarSnackbar(requireView(), "Error: La imagen está vacía.")
+            return
+        }
+
+        // Mostrar un indicador de carga (si es necesario)
+        showLoading()
+
         // Usar FirestoreDBHelper para subir la imagen
-        firestoreHelper.uploadImageToFirebase(bitmap,
+        firestoreHelper.uploadImageToFirebase(bitmap, _PUEBLO_MAGICO.imagenVerificada,
             onSuccess = { imageUrl ->
+                // Asignar el bitmap a la variable
+                _IMG_VISITA_VERIFICADA = bitmap
+
+                // Llamar al método para certificar la visita
                 certificarVisitaPuebloMagico()
             },
             onFailure = { exception ->
-                hideLoading()
+                hideLoading()  // Ocultar el indicador de carga
                 UtilHelper.mostrarSnackbar(requireView(), "Error al subir la imagen: ${exception.message}")
             }
         )
-    }
+    }*/
+
     private fun showLoading() {
         binding.lottieLoading.visibility = View.VISIBLE
         binding.contenedor.visibility = View.GONE
@@ -590,43 +644,7 @@ class PuebloMagicoDetalleFragment : Fragment() {
         _binding = null
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == _CAMERA_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
-            val imageUri = data.data
-
-            // Verificar que la URI no sea nula
-            imageUri?.let { uri ->
-                // Convertir la URI a Bitmap
-                try {
-                    showLoading()
-                    val inputStream = requireActivity().contentResolver.openInputStream(uri)
-                    val bitmap = BitmapFactory.decodeStream(inputStream)
-
-                    // Usar FirestoreDBHelper para subir la imagen
-                    val firestoreDBHelper = FirestoreDBHelper()
-                    firestoreDBHelper.uploadImageToFirebase(bitmap,
-                        onSuccess = { imageUrl ->
-                            hideLoading()
-                            UtilHelper.mostrarSnackbar(requireView(), "Imagen subida exitosamente: $imageUrl")
-                            // Aquí puedes guardar la URL en Firestore o hacer algo más
-                        },
-                        onFailure = { exception ->
-                            hideLoading()
-                            UtilHelper.mostrarSnackbar(requireView(), "Error al subir la imagen: ${exception.message}")
-                        }
-                    )
-                } catch (e: Exception) {
-                    hideLoading()
-                    UtilHelper.mostrarSnackbar(requireView(), "Error al convertir la URI a Bitmap: ${e.message}")
-                }
-            } ?: run {
-                hideLoading()
-                UtilHelper.mostrarSnackbar(requireView(), "La URI de la imagen es nula.")
-            }
-        }
-    }
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
@@ -657,25 +675,26 @@ class PuebloMagicoDetalleFragment : Fragment() {
     private fun visibleImagenVerificacion(){
         if(_PUEBLO_MAGICO.visitaCertificada){
             binding.contenedorImagenVerificacion.visibility = View.VISIBLE
-            val url = "${FirestoreDBHelper._URL_STORAGE_FIREBASE}/Certificaciones/${HelperUser.getUserId()}/${PueblosMagicosFragment._ESTADO.nombreEstado}/${_PUEBLO_MAGICO.nombrePueblo}/${HelperUser.getUserId()}.jpg?alt=media"
 
             val encodedUrl = "${FirestoreDBHelper._URL_STORAGE_FIREBASE}" +
                     Uri.encode("Certificaciones/${HelperUser.getUserId()}/${PueblosMagicosFragment._ESTADO.nombreEstado}/${_PUEBLO_MAGICO.nombrePueblo}/${HelperUser.getUserId()}.jpg") +
                     "?alt=media"
 
             Log.e("YoloSwuag",encodedUrl)
-            Glide.with(requireContext())
-                .load(encodedUrl)
-                .placeholder(R.drawable.img_carga_viaje) // Imagen de marcador de posición
-                .error(R.drawable.img_not_found) // Imagen de error en caso de fallo
-                .into(binding.imagenVerificacion!!)
+            setImgVerficada()
         }else{
             binding.contenedorImagenVerificacion.visibility = View.GONE
+            binding.imagenVerificacion.setImageResource(R.drawable.img_not_found)
         }
 
     }
-    private fun hideImagenVerificacion(){
-        binding.contenedorImagenVerificacion.visibility = View.GONE
+
+    private fun setImgVerficada(){
+        Glide.with(requireContext())
+            .load(_PUEBLO_MAGICO.imagenVerificada)
+            .placeholder(R.drawable.img_carga_viaje) // Imagen de marcador de posición
+            .error(R.drawable.img_not_found) // Imagen de error en caso de fallo
+            .into(binding.imagenVerificacion!!)
     }
 
 }
