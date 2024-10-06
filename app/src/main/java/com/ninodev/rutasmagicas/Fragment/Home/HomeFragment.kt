@@ -9,9 +9,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.appcompat.widget.SearchView
+import com.bumptech.glide.Glide
+import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.ninodev.rutasmagicas.Adapter.EstadosAdapter
 import com.ninodev.rutasmagicas.Fragment.Municipios.PueblosMagicosFragment
@@ -23,6 +27,7 @@ import com.ninodev.rutasmagicas.databinding.FragmentHomeBinding
 import com.ninodev.rutasmagicas.Firebase.FirestoreDBHelper
 import com.ninodev.rutasmagicas.LoginActivity
 import com.ninodev.rutasmagicas.MainActivity
+import com.ninodev.rutasmagicas.R
 
 class HomeFragment : Fragment() {
     private val TAG = "HomeFragment"
@@ -30,6 +35,7 @@ class HomeFragment : Fragment() {
     private lateinit var firestoreDBHelper: FirestoreDBHelper
     private lateinit var estadosAdapter: EstadosAdapter
     private lateinit var estadosList: MutableList<EstadoModel>
+    private lateinit var navHeaderView: View // Vista del header del nav
 
     companion object {
         var TOTAL_PUEBLOS_MAGICOS = 0
@@ -58,12 +64,33 @@ class HomeFragment : Fragment() {
         return _binding?.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    private fun setDataNavHeader() {
+        val navView = requireActivity().findViewById<NavigationView>(R.id.nav_view)
+        navHeaderView = navView.getHeaderView(0) // Obtiene la primera vista de header
 
+        if (navHeaderView == null) {
+            Log.e(TAG, "El header del NavigationView es nulo.")
+            return
+        }
 
+        val imagenPerfil = navHeaderView.findViewById<ImageView>(R.id.imagen_perfil_nav_header)
+        val txtNombreUsuarioNav = navHeaderView.findViewById<TextView>(R.id.txt_nombre_usuario_nav)
+        val txtCorreoNav = navHeaderView.findViewById<TextView>(R.id.txt_correo_nav)
 
+        if (MainActivity._INFO_USER != null) {
+            Glide.with(requireContext())
+                .load(MainActivity._INFO_USER.imagenPerfil)
+                .placeholder(R.drawable.img_carga_viaje)
+                .error(R.drawable.img_not_found)
+                .into(imagenPerfil)
+
+            txtNombreUsuarioNav.text = MainActivity._INFO_USER.nombreUsuario
+            txtCorreoNav.text = MainActivity._INFO_USER.correo
+        } else {
+            Log.e(TAG, "INFO_USER es nulo.")
+        }
     }
+
     private fun init() {
         try {
             firestoreDBHelper = FirestoreDBHelper()
@@ -78,6 +105,7 @@ class HomeFragment : Fragment() {
                             // Actualizar los datos globales o la interfaz de usuario
                             MainActivity._INFO_USER = user
                             binding.txtNombreUsuario.text = "Hola ${MainActivity._INFO_USER.nombreUsuario},\n ¿Que ruta quieres realizar hoy?"
+                            setDataNavHeader()
                             Log.d("FirestoreDBHelper", "Usuario obtenido: ${user.nombreUsuario}")
                         },
                         onFailure = { exception ->

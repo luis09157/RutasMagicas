@@ -64,7 +64,7 @@ class LoginFragment : Fragment() {
     private fun init() {
         try {
             hideLoading()
-            versionPlayStore = VersionPlayStore()
+            //versionPlayStore = VersionPlayStore()
             if (HelperUser.isUserLoggedIn()) {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
@@ -77,12 +77,12 @@ class LoginFragment : Fragment() {
                 }
             }
             // Configura Google Sign-In
-            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+          /*  val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build()
 
-            googleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
+            googleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)*/
 
         } catch (e: Exception) {
             Log.e(TAG, "Error: ${e.message}")
@@ -203,7 +203,7 @@ class LoginFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        checkVersionAndLogin()
+       // checkVersionAndLogin()
         if(_FLAG_IS_REGISTRO){
             _FLAG_IS_REGISTRO = false
             Snackbar.make(requireView(), getString(R.string.thank_you_for_registering), Snackbar.LENGTH_LONG)

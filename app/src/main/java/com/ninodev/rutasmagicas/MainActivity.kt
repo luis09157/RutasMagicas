@@ -17,6 +17,7 @@ import com.ninodev.rutasmagicas.Helper.GPSHelper
 import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.databinding.ActivityMainBinding
 import android.Manifest
+import android.widget.ImageView
 import com.ninodev.rutasmagicas.Fragment.Perfil.MiPerfil
 import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Model.User
@@ -89,6 +90,7 @@ class MainActivity : AppCompatActivity() {
     private fun iniciarGPS() {
         gpsHelper.iniciarActualizacionGPS()
     }
+
     private fun logout() {
         auth.signOut() // Cierra sesión en Firebase
 

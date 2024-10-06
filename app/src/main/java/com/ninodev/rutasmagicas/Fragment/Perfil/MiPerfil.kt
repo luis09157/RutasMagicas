@@ -15,6 +15,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -27,7 +28,9 @@ import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
 import com.ninodev.rutasmagicas.Firebase.FirestoreDBHelper
+import com.ninodev.rutasmagicas.Fragment.Home.HomeFragment
 import com.ninodev.rutasmagicas.Helper.HelperUser
+import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.Helper.UtilHelper
 import com.ninodev.rutasmagicas.MainActivity
 import com.ninodev.rutasmagicas.R
@@ -333,5 +336,16 @@ class MiPerfil : Fragment() {
     private fun hideLoading() {
         binding.lottieLoading.visibility = View.GONE
         binding.contenedor.visibility = View.VISIBLE
+    }
+    override fun onResume() {
+        super.onResume()
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    UtilFragment.changeFragment(requireActivity().supportFragmentManager, HomeFragment(), TAG)
+                }
+            }
+        )
     }
 }
