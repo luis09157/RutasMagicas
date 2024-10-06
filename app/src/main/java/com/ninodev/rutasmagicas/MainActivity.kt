@@ -18,6 +18,8 @@ import com.ninodev.rutasmagicas.Helper.UtilFragment
 import com.ninodev.rutasmagicas.databinding.ActivityMainBinding
 import android.Manifest
 import com.ninodev.rutasmagicas.Fragment.Perfil.MiPerfil
+import com.ninodev.rutasmagicas.Helper.HelperUser
+import com.ninodev.rutasmagicas.Model.User
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,6 +27,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private val TAG = "MainActivity"
     private lateinit var gpsHelper: GPSHelper
+
+    companion object{
+        var _INFO_USER : User = User()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

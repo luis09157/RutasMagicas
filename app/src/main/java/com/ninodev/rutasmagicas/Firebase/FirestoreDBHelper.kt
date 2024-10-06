@@ -1,9 +1,7 @@
 package com.ninodev.rutasmagicas.Firebase
 
 import android.graphics.Bitmap
-import android.net.Uri
 import android.util.Log
-import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
@@ -14,12 +12,13 @@ import com.ninodev.rutasmagicas.Helper.HelperUser
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.Model.MunicipioModel
 import com.ninodev.rutasmagicas.Model.PuebloMagicoModel
+import com.ninodev.rutasmagicas.Model.User
 import java.io.ByteArrayOutputStream
 import java.util.UUID
 
 class FirestoreDBHelper {
 
-    private val firestore = FirebaseFirestore.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
     private val storage = FirebaseStorage.getInstance()
     companion object{
         val _URL_STORAGE_FIREBASE = "https://firebasestorage.googleapis.com/v0/b/rutasmagicas-2514a.appspot.com/o/"
@@ -158,7 +157,6 @@ class FirestoreDBHelper {
                 onFailure(e)
             }
     }
-
     fun toggleVisita(
         userId: String,
         estado: String,
@@ -228,9 +226,6 @@ class FirestoreDBHelper {
                 onFailure(exception) // Notificar el fallo
             }
     }
-
-
-
     fun leerVisitas(
         idUsuario: String,
         nombreEstado: String,
@@ -435,8 +430,6 @@ class FirestoreDBHelper {
                 }
         }, onFailure) // Aquí se pasa correctamente el onFailure
     }
-
-
     fun uploadImageToFirebase(
         imageBitmap: Bitmap,
         previousImageUrl: String?, // URL de la imagen anterior
@@ -478,8 +471,6 @@ class FirestoreDBHelper {
             uploadNewImage(imageRef, imageBitmap, onSuccess, onFailure) // Subir la nueva imagen si no hay URL
         }
     }
-
-    // Función para subir una nueva imagen
     private fun uploadNewImage(
         imageRef: StorageReference,
         imageBitmap: Bitmap,
@@ -504,7 +495,6 @@ class FirestoreDBHelper {
                 onFailure(exception)
             }
     }
-
     fun toggleVisitaCertificadoSinImagen(
         userId: String,
         estado: String,
@@ -575,7 +565,45 @@ class FirestoreDBHelper {
                 onFailure(exception) // Notificar el fallo
             }
     }
+    fun getUserDataFromFirestore(
+        idUsuario: String,
+        onSuccess: (User) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        // Referencia a la colección de usuarios en Firestore
+        val userDocRef = firestore.collection("RutasMagicas")
+            .document("RegistroUsuarios")
+            .collection("Usuarios")
+            .document(idUsuario)
 
+        // Obtener el documento del usuario
+        userDocRef.get()
+            .addOnSuccessListener { documentSnapshot ->
+                if (documentSnapshot.exists()) {
+                    // Extraer los campos necesarios
+                    val nombreUsuario = documentSnapshot.getString("nombreUsuario") ?: ""
+                    val correo = documentSnapshot.getString("correo") ?: ""
+                    val imagenPerfil = documentSnapshot.getString("imagenPerfil") ?: ""
 
+                    // Crear una instancia del modelo User
+                    val user = User(
+                        nombreUsuario = nombreUsuario,
+                        correo = correo,
+                        imagenPerfil = imagenPerfil
+                    )
+
+                    // Devolver el objeto User en caso de éxito
+                    onSuccess(user)
+                } else {
+                    // Si el documento no existe, lanzar una excepción
+                    onFailure(Exception("El usuario con ID $idUsuario no existe"))
+                }
+            }
+            .addOnFailureListener { exception ->
+                // Manejar cualquier error que ocurra durante la obtención del documento
+                Log.e("FirestoreDBHelper", "Error obteniendo datos del usuario: ${exception.message}")
+                onFailure(exception)
+            }
+    }
 
 }

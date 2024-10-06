@@ -32,7 +32,6 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-
                 android:translationZ="-10dp">
 
                 <com.google.android.material.card.MaterialCardView
@@ -51,8 +50,6 @@
                         android:scaleType="centerCrop"
                         android:src="@drawable/img_carga_viaje"
                         tools:ignore="ContentDescription" />
-
-                    <!-- Floating Action Button for changing the profile picture -->
 
                 </com.google.android.material.card.MaterialCardView>
 
@@ -73,6 +70,60 @@
             app:fabSize="mini"
             app:tint="@color/color_verde_fuerte" />
 
+        <TextView
+            android:id="@+id/txt_nombre_usuario"
+            android:layout_margin="20dp"
+            android:layout_width="match_parent"
+            android:gravity="center"
+            android:lines="2"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_bold"
+            android:text="Zacatecas"
+            android:textColor="@color/black"
+            android:textSize="22sp" />
+
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Correo Electrónico"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            app:boxStrokeColor="@color/color_verde_fuerte"
+            app:hintTextAppearance="@style/TextAppearance.AppCompat.Body1">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_text_email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="correo@ejemplo.com"
+                android:textColor="@color/black"
+                android:textSize="18sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Password TextInputLayout (editable) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Contraseña"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            app:boxStrokeColor="@color/color_verde_fuerte"
+            app:hintTextAppearance="@style/TextAppearance.AppCompat.Body1">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_text_password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:inputType="textPassword" />
+        </com.google.android.material.textfield.TextInputLayout>
 
     </LinearLayout>
 

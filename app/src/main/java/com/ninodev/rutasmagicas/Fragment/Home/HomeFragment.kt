@@ -1,6 +1,7 @@
 package com.ninodev.rutasmagicas.Fragment.Home
 
 import android.animation.ValueAnimator
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -20,6 +21,8 @@ import com.ninodev.rutasmagicas.LoginFragment
 import com.ninodev.rutasmagicas.Model.EstadoModel
 import com.ninodev.rutasmagicas.databinding.FragmentHomeBinding
 import com.ninodev.rutasmagicas.Firebase.FirestoreDBHelper
+import com.ninodev.rutasmagicas.LoginActivity
+import com.ninodev.rutasmagicas.MainActivity
 
 class HomeFragment : Fragment() {
     private val TAG = "HomeFragment"
@@ -41,11 +44,6 @@ class HomeFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        return _binding?.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
         showLoading()
         estadosList = mutableListOf()
@@ -56,6 +54,15 @@ class HomeFragment : Fragment() {
         initData()
         listeners()
         handleBackPress()
+
+        return _binding?.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+
+
     }
     private fun init() {
         try {
@@ -65,7 +72,26 @@ class HomeFragment : Fragment() {
                 val userId = HelperUser.getUserId()
                 if (!userId.isNullOrEmpty()) {
                     HelperUser._ID_USER = userId
-                    firestoreDBHelper.getNombreUsuario( HelperUser._ID_USER,
+
+                    firestoreDBHelper.getUserDataFromFirestore(userId,
+                        onSuccess = { user ->
+                            // Actualizar los datos globales o la interfaz de usuario
+                            MainActivity._INFO_USER = user
+                            binding.txtNombreUsuario.text = "Hola ${MainActivity._INFO_USER.nombreUsuario},\n ¿Que ruta quieres realizar hoy?"
+                            Log.d("FirestoreDBHelper", "Usuario obtenido: ${user.nombreUsuario}")
+                        },
+                        onFailure = { exception ->
+                            // Manejo del fallo al obtener el usuario
+                            Log.e("FirestoreDBHelper", "Error obteniendo usuario: ${exception.message}")
+                            val intent = Intent(activity, LoginActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            startActivity(intent)
+
+                            // Mostrar un mensaje de error o manejar la excepción
+                        }
+                    )
+
+                   /* firestoreDBHelper.getNombreUsuario( HelperUser._ID_USER,
                         onSuccess = { nombreUsuario ->
                             Log.d("NombreUsuario", "El nombre del usuario es: $nombreUsuario")
                             binding.txtNombreUsuario.text = "Hola ${nombreUsuario},\n ¿Que ruta quieres realizar hoy?"
@@ -73,7 +99,7 @@ class HomeFragment : Fragment() {
                         onFailure = { exception ->
                             Log.e("ErrorNombreUsuario", "Error: ${exception.message}")
                         }
-                    )
+                    )*/
                 } else {
                     Snackbar.make(requireView(), "El ID de usuario es nulo o vacío", Snackbar.LENGTH_LONG).show()
                 }
